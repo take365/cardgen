@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>トレーディングカードクラフター</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232959b3'/%3E%3Ctext x='8' y='11' font-size='9' text-anchor='middle' fill='white'%3EC%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="./styles.css" />
+    <!-- Konva (CDN). If offline, replace with local copy. -->
+    <script src="https://unpkg.com/konva@9.3.14/konva.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>トレーディングカードクラフター</h1>
+      <span class="spacer"></span>
+      <a href="gen.html" style="color:#5f9fff; text-decoration:none; font-weight:600">AI画像生成へ</a>
+    </header>
+    <main>
+      <aside class="panel">
+        <div class="section">
+          <h2>&nbsp;</h2>
+          <div class="row" style="gap:8px; flex-wrap:wrap;">
+            <button id="openBgPicker" type="button" class="primary">背景を選択</button>
+          </div>
+        </div>
+        <div class="section">
+          <h2>&nbsp;</h2>
+          <div class="row" style="gap:8px; flex-wrap:wrap;">
+            <button id="openFramePicker" type="button" class="primary">枠を選択</button>
+          </div>
+        </div>
+        <div class="section">
+          <h2>&nbsp;</h2>
+          <div class="row" style="gap:8px; flex-wrap:wrap;">
+            <button id="openItemPicker" type="button" class="primary">アイテムを選択</button>
+            <div class="row" style="gap:4px;">
+              <button id="itemScaleMinus" type="button" title="アイテム縮小" style="width:32px;padding:6px 0">－</button>
+              <button id="itemScalePlus" type="button" title="アイテム拡大" style="width:32px;padding:6px 0">＋</button>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>&nbsp;</h2>
+          <div class="row" style="gap:8px; flex-wrap:wrap;">
+            <button id="openIconPicker" type="button" class="primary">アイコンを選択</button>
+            <div class="row" style="gap:4px;">
+              <button id="iconScaleMinus" type="button" title="アイコン縮小" style="width:32px;padding:6px 0">－</button>
+              <button id="iconScalePlus" type="button" title="アイコン拡大" style="width:32px;padding:6px 0">＋</button>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>&nbsp;</h2>
+          <label for="titleInput">タイトル</label>
+          <input id="titleInput" type="text" placeholder="例: Flame Dagger" />
+          <details style="margin:6px 0 10px;">
+            <summary style="cursor:pointer; color: var(--muted);">詳細</summary>
+            <div class="row" style="gap:8px; align-items:center; margin:8px 0 8px; flex-wrap: wrap;">
+              <label>タイトル フォント
+                <select id="titleFontSelect" style="min-width:220px"></select>
+              </label>
+              <button id="openFontMgrTitle" type="button">＋追加…</button>
+            </div>
+            <div class="row" style="gap:8px; flex-wrap: wrap; margin-top:6px">
+              <label>色 <input id="titleColor" type="color" value="#ffffff" /></label>
+              <label>サイズ(px) <input id="titleSize" type="number" value="32" style="width:72px" /></label>
+              <label>フォント <input id="titleFont" type="text" value="Noto Sans JP, system-ui, sans-serif" style="width:220px" /></label>
+              <label>太さ
+                <select id="titleWeight">
+                  <option value="700" selected>Bold</option>
+                  <option value="400">Normal</option>
+                </select>
+              </label>
+            </div>
+          </details>
+          <label for="bodyInput">本文</label>
+          <textarea id="bodyInput" placeholder="効果説明を入力"></textarea>
+          <details style="margin:6px 0 10px;">
+            <summary style="cursor:pointer; color: var(--muted);">詳細</summary>
+            <div class="row" style="gap:8px; align-items:center; margin:8px 0 8px; flex-wrap: wrap;">
+              <label>本文 フォント
+                <select id="bodyFontSelect" style="min-width:220px"></select>
+              </label>
+              <button id="openFontMgrBody" type="button">＋追加…</button>
+            </div>
+            <div class="row" style="gap:8px; flex-wrap: wrap; margin-top:6px">
+              <label>色 <input id="bodyColor" type="color" value="#e6edf3" /></label>
+              <label>サイズ(px) <input id="bodySize" type="number" value="24" style="width:72px" /></label>
+              <label>フォント <input id="bodyFont" type="text" value="Noto Sans JP, system-ui, sans-serif" style="width:220px" /></label>
+            </div>
+          </details>
+        </div>
+        <div class="section" id="extraAreas">
+          <div class="row" style="gap:8px; flex-wrap:wrap;">
+            <button id="addIconArea" type="button">追加アイコンを追加</button>
+            <button id="addBodyArea" type="button">追加本文を追加</button>
+          </div>
+        </div>
+      </aside>
+      <section class="panel stage-wrap" id="stageWrap">
+        <div class="row" id="stageToolbar" style="gap:8px; margin-bottom:8px; align-items:center;">
+          <button id="exportBtn" class="primary">PNG保存</button>
+          <label for="viewScale" style="color: var(--muted); font-size:12px">表示</label>
+          <select id="viewScale">
+            <option value="fit">フィット</option>
+            <option value="1">100%</option>
+            <option value="0.75">75%</option>
+            <option value="0.66">66%</option>
+            <option value="0.5">50%</option>
+          </select>
+        </div>
+        <div class="stage-zoom" id="stageZoom">
+          <div class="stage-frame" id="stageContainer"></div>
+        </div>
+      </section>
+  </main>
+  <!-- Font Manager Modal (Google Fonts URL only) -->
+  <div id="fontModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:1000;">
+    <div style="background:#11141b; border:1px solid #2a2f3a; border-radius:8px; padding:16px; width: 560px; max-width: 94vw; color:#e6edf3;">
+      <h3 style="margin:0 0 10px; font-size:16px;">フォント管理（Google Fonts）</h3>
+      <ol style="margin:0 0 10px 18px; padding:0; color:#9aa4b2; font-size:12px; line-height:1.6;">
+        <li><a href="https://fonts.google.com/" target="_blank" rel="noreferrer" style="color:#5f9fff;">fonts.google.com</a> を開き、使いたいフォントを選ぶ</li>
+        <li>右側の Embed/Use on the web で <code>link</code> の CSS URL（<code>https://fonts.googleapis.com/css2?family=...&amp;display=swap</code>）をコピー</li>
+        <li>下の欄に貼り付けて「読み込んで追加」を押す（単一ファミリー推奨）</li>
+      </ol>
+      <div style="display:grid; gap:8px; margin-top:6px;">
+        <label>Google Fonts の CSS URL
+          <input id="fmUrl" type="text" placeholder="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" style="width:100%" />
+        </label>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button type="button" onclick="closeFontManager()">閉じる</button>
+        <button type="button" class="primary" onclick="addFontFromModal()">読み込んで追加</button>
+      </div>
+    </div>
+  </div>
+  <!-- Item Picker Modal -->
+  <div id="itemModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:999;">
+    <div style="background:#11141b; border:1px solid #2a2f3a; border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:#e6edf3; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <h3 style="margin:0; font-size:16px;">アイテムを選択</h3>
+        <div class="row" style="gap:8px; align-items:center;">
+          <button id="openItemUpload" type="button">画像を取り込む（このブラウザに保存）</button>
+          <button type="button" onclick="(function(){document.getElementById('itemModal').style.display='none'})()">閉じる</button>
+        </div>
+      </div>
+      <div id="itemGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
+      <input id="itemUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+    </div>
+  </div>
+  <!-- Asset Picker Modal (Background/Frame/Icon) -->
+  <div id="assetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:999;">
+    <div style="background:#11141b; border:1px solid #2a2f3a; border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:#e6edf3; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <h3 id="assetModalTitle" style="margin:0; font-size:16px;">素材を選択</h3>
+        <div class="row" style="gap:8px; align-items:center;">
+          <button id="openAssetUpload" type="button">画像を取り込む（このブラウザに保存）</button>
+          <button type="button" onclick="(function(){document.getElementById('assetModal').style.display='none'})()">閉じる</button>
+        </div>
+      </div>
+      <div id="assetGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
+      <input id="assetUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+    </div>
+  </div>
+    <footer>
+      このカードジェネレータに含まれるアップロード素材およびサンプル素材は、すべてフリー素材として提供されます。これらの素材単体に対して当サービスは著作権を主張しません。カードジェネレータで生成された合成画像の権利は利用者に帰属し、商用利用を含め自由にご利用いただけます。ただし、商標登録や著作権の取得が自動的に保証されるものではありません。
+    </footer>
+
+    <script>
+      const CANVAS_W = 750;
+      const CANVAS_H = 1050;
+      const PADDING = 32;
+      const ICON_SIZE = 83; // 64 * 1.3 ≈ 83
+      const ICON_GAP = 12;
+      // ガイド（カード内側とゾーン）
+      const INSET = { x: 75, y: 75, w: 600, h: 900 };
+      const ZONES = {
+        main:  { x: 75, y: 75,  w: 600, h: 550 },
+        title: { x: 75, y: 625, w: 600, h: 100 },
+        desc:  { x: 75, y: 725, w: 600, h: 250 }
+      };
+
+      // Presets (lightweight, no external assets). You can later swap to real images.
+      // Built-in font options (from doc/フォント選択.md)
+      const BUILTIN_FONTS = [
+        { label: '（デフォルト）', value: 'default' },
+        { label: 'Noto Sans JP (Web)', family: 'Noto Sans JP', weights: [400,700], url: 'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap' },
+        { label: 'Noto Serif JP (Web)', family: 'Noto Serif JP', weights: [400,700], url: 'https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap' },
+        { label: 'Cinzel (Web)', family: 'Cinzel', weights: [700], url: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap' },
+        { label: 'system-ui (Local)', family: 'system-ui', local: true },
+        { label: 'Arial (Local)', family: 'Arial', local: true },
+      ];
+      let BACKGROUNDS = [
+        { key: 'deepblue', type: 'color', value: '#0b2238', label: 'Deep' },
+        { key: 'emerald',  type: 'color', value: '#0e3b2e', label: 'Emrld' },
+        { key: 'crimson',  type: 'color', value: '#3a0e16', label: 'Crmsn' },
+        { key: 'slate',    type: 'color', value: '#1a202c', label: 'Slate' },
+      ];
+      let FRAMES = [
+        { key: 'gold',   type: 'stroke', color: '#e0b84a' },
+        { key: 'silver', type: 'stroke', color: '#b8c0cc' },
+        { key: 'iris',   type: 'stroke', color: '#6aa9ff' },
+        { key: 'onyx',   type: 'stroke', color: '#444b57' },
+      ];
+      let ICONS = [
+        { key: 'sword', shape: 'triangle', color: '#f87171', label: '剣' },
+        { key: 'shield', shape: 'rect', color: '#60a5fa', label: '盾' },
+        { key: 'star', shape: 'star', color: '#fbbf24', label: '星' },
+        { key: 'orb', shape: 'circle', color: '#34d399', label: '珠' },
+      ];
+
+      // Stage and layers
+      const stage = new Konva.Stage({
+        container: 'stageContainer', width: CANVAS_W, height: CANVAS_H,
+      });
+      const bgLayer = new Konva.Layer();
+      const frameLayer = new Konva.Layer();
+      const artLayer = new Konva.Layer(); // reserved for future user art
+      const iconsLayer = new Konva.Layer();
+      const textLayer = new Konva.Layer();
+      const guideLayer = new Konva.Layer();
+      stage.add(bgLayer, frameLayer, artLayer, iconsLayer, textLayer, guideLayer);
+
+      // Background rect placeholder (resized by autoLayout or selection)
+      const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, fill: '#1a202c' });
+      bgLayer.add(backgroundRect);
+
+      // Frame placeholder
+      const frameRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, stroke: '#444b57', strokeWidth: 8, cornerRadius: 24 });
+      frameLayer.add(frameRect);
+      let backgroundImageNode = null;
+      let frameImageNode = null;
+      let itemImageNode = null;
+      let itemCurrentUrl = null;
+      // アイコンは最大3スロット
+      let iconImageNodes = [null, null, null];
+      let iconCurrentUrls = [null, null, null];
+      let currentIconSlot = 0; // 0:一番目, 1:二番目, 2:三番目
+      const TITLE_BODY_OFFSET_Y = 110;
+      const BACKGROUND_OFFSET_Y = 10;
+      const ITEM_OFFSET_Y = 30;
+
+      // Title and body text nodes
+      const titleText = new Konva.Text({
+        x: ZONES.title.x + 16, y: ZONES.title.y + 8,
+        width: ZONES.title.w - 32,
+        text: '',
+        fontFamily: 'Noto Sans JP, system-ui, sans-serif',
+        fontStyle: '700',
+        fontSize: 32,
+        fill: '#ffffff',
+        align: 'center',
+        draggable: true,
+      });
+      const bodyText = new Konva.Text({
+        x: ZONES.desc.x + 24, y: ZONES.desc.y + 12,
+        width: ZONES.desc.w - 48,
+        text: '',
+        fontFamily: 'Noto Sans JP, system-ui, sans-serif',
+        fontSize: 24,
+        lineHeight: 1.25,
+        fill: '#e6edf3',
+        align: 'left',
+        draggable: true,
+      });
+      const bodyText2 = new Konva.Text({
+        x: ZONES.desc.x + 24, y: ZONES.desc.y + 12,
+        width: ZONES.desc.w - 48,
+        text: '',
+        fontFamily: 'Noto Sans JP, system-ui, sans-serif',
+        fontSize: 24,
+        lineHeight: 1.25,
+        fill: '#e6edf3',
+        align: 'left',
+        draggable: true,
+        visible: true,
+      });
+      textLayer.add(titleText, bodyText, bodyText2);
+
+      // Selection handling (simple visual feedback)
+      let selected = null;
+      function selectNode(node) {
+        if (selected && selected !== node) {
+          selected.shadowEnabled(false);
+          selected.shadowColor('');
+          selected.shadowBlur(0);
+        }
+        selected = node;
+        if (selected) {
+          selected.shadowEnabled(true);
+          selected.shadowColor('#5f9fff');
+          selected.shadowBlur(10);
+        }
+        stage.draw();
+      }
+      stage.on('click tap', (e) => {
+        if (e.target === stage) { selectNode(null); return; }
+        selectNode(e.target);
+      });
+
+      // Wheel scaling: scale selected node; if none, scale stage
+      stage.container().addEventListener('wheel', (evt) => {
+        evt.preventDefault();
+        const scaleBy = 1.05;
+        const oldScale = selected ? selected.scaleX() : stage.scaleX();
+        const mousePointTo = stage.getPointerPosition();
+        const direction = evt.deltaY > 0 ? -1 : 1;
+        const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+        if (selected) {
+          selected.scale({ x: newScale, y: newScale });
+        } else {
+          const stagePos = stage.position();
+          const newPos = {
+            x: mousePointTo.x - (mousePointTo.x - stagePos.x) * (newScale / oldScale),
+            y: mousePointTo.y - (mousePointTo.y - stagePos.y) * (newScale / oldScale),
+          };
+          stage.scale({ x: newScale, y: newScale });
+          stage.position(newPos);
+        }
+        stage.batchDraw();
+      }, { passive: false });
+
+      // Build thumbnails
+      function b64(s){ try { return btoa(unescape(encodeURIComponent(s))); } catch(e){ return ''; } }
+      function ensureFontLink(url){
+        const id = 'gf-' + b64(url);
+        if (!document.getElementById(id)){
+          const l = document.createElement('link');
+          l.id = id; l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l);
+        }
+      }
+      // New per-title/body font selection utilities
+      function buildFontOptionList() {
+        const userMeta = JSON.parse(localStorage.getItem('cardgen.fontUserMeta') || '[]');
+        return BUILTIN_FONTS.concat(userMeta.map(m => ({ label: `${m.family} (Web)`, family: m.family, url: m.url, weights: m.weights })));
+      }
+      function stackForFamily(family) {
+        if (!family || family === 'default') return 'Noto Sans JP, system-ui, sans-serif';
+        return `"${family}", Noto Sans JP, system-ui, sans-serif`;
+      }
+      async function applyFontTo(nodeType, family, url) {
+        if (url) ensureFontLink(url);
+        try { await document.fonts.ready; } catch(e){}
+        const stack = stackForFamily(family);
+        if (nodeType === 'title') {
+          titleText.fontFamily(stack);
+          const tf = document.getElementById('titleFont'); if (tf) tf.value = stack;
+          localStorage.setItem('cardgen.fontTitle', stack);
+        } else {
+          bodyText.fontFamily(stack);
+          const bf = document.getElementById('bodyFont'); if (bf) bf.value = stack;
+          localStorage.setItem('cardgen.fontBody', stack);
+        }
+        textLayer.draw();
+      }
+      function rebuildFontSelects() {
+        const options = buildFontOptionList();
+        const sTitle = document.getElementById('titleFontSelect');
+        const sBody = document.getElementById('bodyFontSelect');
+        if (!sTitle || !sBody) return;
+        [sTitle, sBody].forEach(sel => {
+          sel.innerHTML = '';
+          options.forEach((f) => {
+            const opt = document.createElement('option');
+            opt.textContent = f.label; opt.value = f.family || f.value || 'default';
+            opt.dataset.url = f.url || '';
+            sel.appendChild(opt);
+          });
+        });
+        const savedTitle = localStorage.getItem('cardgen.fontTitle');
+        const savedBody = localStorage.getItem('cardgen.fontBody');
+        function restore(sel, saved) {
+          if (!saved) { sel.value = 'default'; return; }
+          const fam = saved.split(',')[0].replace(/["']/g,'').trim();
+          sel.value = fam || 'default';
+        }
+        restore(sTitle, savedTitle);
+        restore(sBody, savedBody);
+      }
+      function openFontManager(who) {
+        const modal = document.getElementById('fontModal');
+        if (!modal) return;
+        modal.dataset.target = who;
+        modal.style.display = 'grid';
+      }
+      async function addFontFromModal() {
+        const customUrl = document.getElementById('fmUrl');
+        const urlRaw = (customUrl?.value || '').trim();
+        if (!urlRaw) { alert('Google Fonts の CSS URL を入力してください'); return; }
+        const url = urlRaw;
+        // Try to extract family=... (first one), strip weights suffix
+        let family = 'Custom';
+        try {
+          const m = url.match(/[?&]family=([^&]+)/i);
+          if (m) {
+            const famParam = decodeURIComponent(m[1]).split('&')[0];
+            // famParam like "Dela+Gothic+One" or "Noto+Sans+JP:wght@400;700"
+            family = famParam.split(':')[0].replace(/\+/g, ' ');
+          }
+        } catch (e) {}
+        const meta = { label: `${family} (Web)`, family, weights: [], url };
+        ensureFontLink(meta.url);
+        try { await document.fonts.ready; } catch(e){}
+        const userMeta = JSON.parse(localStorage.getItem('cardgen.fontUserMeta') || '[]');
+        if (!userMeta.some(m => m.family === meta.family)) userMeta.push(meta);
+        localStorage.setItem('cardgen.fontUserMeta', JSON.stringify(userMeta));
+        rebuildFontSelects();
+        const modal = document.getElementById('fontModal');
+        const who = modal.dataset.target || 'title';
+        const sel = who === 'title' ? document.getElementById('titleFontSelect') : document.getElementById('bodyFontSelect');
+        sel.value = meta.family;
+        await applyFontTo(who, meta.family, meta.url);
+        closeFontManager();
+      }
+      function closeFontManager(){ const m=document.getElementById('fontModal'); if (m) m.style.display='none'; }
+      function applyMainFontStack(stack){
+        // Apply to text nodes and sync inputs if present
+        if (stack && stack !== 'default') {
+          titleText.fontFamily(stack);
+          bodyText.fontFamily(stack);
+          const tf = document.getElementById('titleFont'); if (tf) tf.value = stack;
+          const bf = document.getElementById('bodyFont'); if (bf) bf.value = stack;
+        } else {
+          const def = 'Noto Sans JP, system-ui, sans-serif';
+          titleText.fontFamily(def);
+          bodyText.fontFamily(def);
+          const tf = document.getElementById('titleFont'); if (tf) tf.value = def;
+          const bf = document.getElementById('bodyFont'); if (bf) bf.value = def;
+        }
+        textLayer.draw();
+      }
+      async function loadAndApplyFont(meta){
+        if (!meta || meta.value === 'default') { applyMainFontStack('default'); return; }
+        if (meta.url) { ensureFontLink(meta.url); }
+        try { await document.fonts.ready; } catch(e){}
+        // Build stack: user family first, then default stack
+        const stack = `"${meta.family}", Noto Sans JP, system-ui, sans-serif`;
+        applyMainFontStack(stack);
+      }
+      function initFontSelector(){
+        const sel = document.getElementById('fontSelect');
+        if (!sel) return;
+        const savedStack = localStorage.getItem('cardgen.fontUser');
+        const firstDone = localStorage.getItem('cardgen.firstRunComplete') === 'true';
+        // Populate
+        sel.innerHTML = '';
+        BUILTIN_FONTS.forEach((f,i)=>{
+          const opt = document.createElement('option');
+          opt.textContent = f.label; opt.value = f.value || f.family || 'default';
+          opt.dataset.idx = i;
+          sel.appendChild(opt);
+        });
+        // Disable after first run
+        sel.disabled = firstDone;
+        // Restore selection
+        if (savedStack) {
+          // Try to match by family at head of stack
+          const fam = savedStack.split(',')[0].replace(/["']/g,'').trim();
+          const idx = BUILTIN_FONTS.findIndex(f => (f.family||'default') === fam);
+          if (idx >= 0) sel.value = BUILTIN_FONTS[idx].family || 'default';
+          applyMainFontStack(savedStack);
+        } else {
+          sel.value = 'default';
+          applyMainFontStack('default');
+        }
+        sel.addEventListener('change', async ()=>{
+          const idx = Number(sel.options[sel.selectedIndex].dataset.idx||'-1');
+          const meta = idx>=0 ? BUILTIN_FONTS[idx] : { value: 'default' };
+          await loadAndApplyFont(meta);
+          // Save and lock
+          const stack = (meta && meta.value!=='default') ? `"${meta.family}", Noto Sans JP, system-ui, sans-serif` : 'Noto Sans JP, system-ui, sans-serif';
+          localStorage.setItem('cardgen.fontUser', stack);
+          localStorage.setItem('cardgen.firstRunComplete', 'true');
+          sel.disabled = true;
+        });
+      }
+      function setCounts() {
+        const nBg = (window.ASSET_BG_LIST || []).length || BACKGROUNDS.length;
+        const nFr = (window.ASSET_FRAME_LIST || []).length || FRAMES.length;
+        const nIt = (window.ASSET_ITEM_LIST || []).length;
+        const nIc = (window.ASSET_ICON_LIST || []).length || ICONS.length;
+        const s = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = `(${v})`; };
+        s('bgCount', nBg); s('frameCount', nFr); s('itemCount', nIt); s('iconCount', nIc);
+      }
+      function buildThumbs() { setCounts(); }
+
+      // Apply background/frame/icon
+      function applyBackground(bg) {
+        if (bg.type === 'color') {
+          backgroundRect.fill(bg.value);
+          bgLayer.draw();
+        }
+      }
+      function applyFrame(fr) {
+        frameRect.stroke(fr.color);
+        frameLayer.draw();
+      }
+      function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+      async function applyBackgroundImageURL(url) {
+        const img = await loadImage(url);
+        if (!backgroundImageNode) {
+          backgroundImageNode = new Konva.Image({});
+          bgLayer.add(backgroundImageNode);
+        }
+        // メインエリアに cover
+        const scale = Math.max(ZONES.main.w / img.width, ZONES.main.h / img.height);
+        const w = img.width * scale; const h = img.height * scale;
+        const x = ZONES.main.x + (ZONES.main.w - w) / 2;
+        // stick inside main zone with top gap so it doesn't touch the top frame
+        const y = ZONES.main.y + BACKGROUND_OFFSET_Y;
+        backgroundImageNode.image(img);
+        backgroundImageNode.position({ x, y });
+        backgroundImageNode.size({ width: w, height: h });
+        bgLayer.draw();
+      }
+      async function applyFrameImageURL(url) {
+        const img = await loadImage(url);
+        if (!frameImageNode) {
+          frameImageNode = new Konva.Image({});
+          frameLayer.add(frameImageNode);
+        }
+        // Fit canvas (assumes correct aspect). If aspect differs, this stretches.
+        frameImageNode.image(img);
+        frameImageNode.position({ x: 0, y: 0 });
+        frameImageNode.size({ width: CANVAS_W, height: CANVAS_H });
+        frameLayer.draw();
+        // ファイル名からゾーン高を取得
+        parseFrameZonesFromName(url);
+        // 位置の初期化は自動配置ボタンまで行わない
+      }
+      async function addItemImageURL(url) {
+        const img = await loadImage(url);
+        if (itemImageNode && itemCurrentUrl === url) {
+          // toggle delete
+          itemImageNode.destroy(); itemImageNode = null; itemCurrentUrl = null; artLayer.draw();
+          return;
+        }
+        if (!itemImageNode) {
+          itemImageNode = new Konva.Image({ image: img, draggable: true });
+          artLayer.add(itemImageNode);
+          itemImageNode.on('click tap', () => selectNode(itemImageNode));
+          // initial center fit in main zone
+          const scale = Math.min(ZONES.main.w / img.width, ZONES.main.h / img.height);
+          itemImageNode.size({ width: img.width * scale, height: img.height * scale });
+          itemImageNode.position({ x: ZONES.main.x + (ZONES.main.w - itemImageNode.width())/2, y: ZONES.main.y + (ZONES.main.h - itemImageNode.height())/2 + ITEM_OFFSET_Y });
+          artLayer.draw();
+        } else {
+          // replace image, keep center position
+          const cx = itemImageNode.x() + itemImageNode.width()/2;
+          const cy = itemImageNode.y() + itemImageNode.height()/2;
+          const scale = Math.min(ZONES.main.w / img.width, ZONES.main.h / img.height);
+          itemImageNode.image(img);
+          itemImageNode.size({ width: img.width * scale, height: img.height * scale });
+          itemImageNode.position({ x: cx - itemImageNode.width()/2, y: cy - itemImageNode.height()/2 });
+          artLayer.draw();
+        }
+        itemCurrentUrl = url;
+      }
+
+      async function addBadgeIconURL(url) {
+        const img = await loadImage(url);
+        const slot = currentIconSlot; // 0..2
+        const existing = iconImageNodes[slot];
+        const existingUrl = iconCurrentUrls[slot];
+        const size = 52; // 40 * 1.3 ≈ 52 (初期表示を30%拡大)
+        if (existing && existingUrl === url) {
+          existing.destroy(); iconImageNodes[slot] = null; iconCurrentUrls[slot] = null; iconsLayer.draw();
+          return;
+        }
+        if (!existing) {
+          const scale = size / Math.max(img.width, img.height);
+          const node = new Konva.Image({ image: img, width: img.width * scale, height: img.height * scale, draggable: true });
+          iconsLayer.add(node);
+          node.on('click tap', () => selectNode(node));
+          // initial position: title右寄せ
+          const tx = (ZONES.title.h > 0 ? ZONES.title.x : ZONES.main.x);
+          const tw = (ZONES.title.h > 0 ? ZONES.title.w : ZONES.main.w);
+          const ty = (ZONES.title.h > 0 ? ZONES.title.y : ZONES.main.y);
+          const x = tx + tw - node.width() - 28;
+          const y = ty + TITLE_BODY_OFFSET_Y + 8 - 10 + slot * (node.height() + 6); // 10px 上に
+          node.position({ x, y });
+          iconImageNodes[slot] = node; iconCurrentUrls[slot] = url;
+          iconsLayer.draw();
+        } else {
+          const cx = existing.x() + existing.width()/2;
+          const cy = existing.y() + existing.height()/2;
+          const scale = size / Math.max(img.width, img.height);
+          existing.image(img);
+          existing.size({ width: img.width * scale, height: img.height * scale });
+          existing.position({ x: cx - existing.width()/2, y: cy - existing.height()/2 });
+          iconCurrentUrls[slot] = url;
+          iconsLayer.draw();
+        }
+      }
+      function addIcon(ic) {
+        let node;
+        if (ic.shape === 'circle' || ic.shape === 'orb') {
+          node = new Konva.Circle({ radius: ICON_SIZE/2, fill: ic.color, draggable: true });
+        } else if (ic.shape === 'rect' || ic.shape === 'shield') {
+          node = new Konva.Rect({ width: ICON_SIZE, height: ICON_SIZE, cornerRadius: 12, fill: ic.color, draggable: true });
+        } else if (ic.shape === 'star') {
+          node = new Konva.Star({ numPoints: 5, innerRadius: ICON_SIZE/4, outerRadius: ICON_SIZE/2, fill: ic.color, draggable: true });
+        } else { // triangle / sword placeholder
+          node = new Konva.RegularPolygon({ sides: 3, radius: ICON_SIZE/2, fill: ic.color, draggable: true });
+        }
+        // initial position roughly top-right area
+        node.position({ x: CANVAS_W - PADDING - ICON_SIZE/2, y: PADDING + ICON_SIZE/2 });
+        node.on('click tap', () => selectNode(node));
+        iconsLayer.add(node);
+        iconsLayer.draw();
+      }
+
+      // Auto layout
+      function measureTextWidth(text, fontSize, fontFamily, fontStyle) {
+        const c = measureTextWidth._c || (measureTextWidth._c = document.createElement('canvas'));
+        const ctx = c.getContext('2d');
+        const style = fontStyle && fontStyle !== 'normal' ? fontStyle + ' ' : '';
+        ctx.font = `${style}${fontSize}px ${fontFamily}`;
+        return ctx.measureText(text || '').width;
+      }
+      function fitTextWidth(textNode, maxWidth, minSize = 18, maxSize = 56) {
+        let size = Math.min(Math.max(textNode.fontSize(), minSize), maxSize);
+        const fam = textNode.fontFamily();
+        const style = textNode.fontStyle();
+        textNode.fontSize(size);
+        while (measureTextWidth(textNode.text(), size, fam, style) > maxWidth && size > minSize) {
+          size -= 1;
+          textNode.fontSize(size);
+        }
+      }
+      function parseFrameZonesFromName(url) {
+        const name = url.split('/').pop();
+        const m = name && name.match(/frame-(\d+)-(\d+)-(\d+)/);
+        if (m) {
+          const mainH = parseInt(m[1], 10), titleH = parseInt(m[2], 10), descH = parseInt(m[3], 10);
+          // 水平方向は共通 600px、垂直は Title→Main→Desc の順にINSET内へ詰める
+          ZONES.main  = { x: INSET.x, y: INSET.y,          w: INSET.w, h: mainH };
+          ZONES.title = { x: INSET.x, y: INSET.y + mainH, w: INSET.w, h: titleH };
+          ZONES.desc  = { x: INSET.x, y: INSET.y + mainH + titleH, w: INSET.w, h: descH };
+        }
+      }
+      function autoLayout() {
+        // Background cover (already fills canvas via rect)
+        backgroundRect.position({ x: 0, y: 0 });
+        backgroundRect.size({ width: CANVAS_W, height: CANVAS_H });
+
+        // Frame fit
+        frameRect.position({ x: 0, y: 0 });
+        frameRect.size({ width: CANVAS_W, height: CANVAS_H });
+
+        // Title and body inside their zones with offset
+        const titleZone = (ZONES.title.h > 0) ? ZONES.title : { x: ZONES.main.x, y: ZONES.main.y, w: ZONES.main.w, h: 0 };
+        titleText.position({ x: titleZone.x + 16, y: titleZone.y + 8 + TITLE_BODY_OFFSET_Y });
+        titleText.width(titleZone.w - 32);
+        fitTextWidth(titleText, titleText.width(), 24, 36);
+
+        // Body in Description zone with padding 24/12 and offset, plus 1-char side padding
+        const bodyFam = bodyText.fontFamily();
+        const bodyStyle = bodyText.fontStyle();
+        const charPad = Math.max(8, Math.ceil(measureTextWidth('あ', bodyText.fontSize(), bodyFam, bodyStyle)) || bodyText.fontSize());
+        const basePadX = 24;
+        bodyText.width(Math.max(10, ZONES.desc.w - (basePadX * 2) - (charPad * 2)));
+        bodyText.x(ZONES.desc.x + basePadX + charPad);
+        bodyText.y(ZONES.desc.y + 12 + TITLE_BODY_OFFSET_Y);
+        // Second body (if not empty) just below the first
+        bodyText2.width(bodyText.width());
+        bodyText2.x(bodyText.x());
+        if ((bodyText2.text()||'').length>0) {
+          bodyText2.y(bodyText.y() + bodyText.height() + 6);
+        } else {
+          bodyText2.y(bodyText.y()); // keep same; user can drag
+        }
+        textLayer.draw();
+
+        // Main item image fit
+        if (itemImageNode && itemImageNode.image()) {
+          const img = itemImageNode.image();
+          const scale = Math.min(ZONES.main.w / img.width, ZONES.main.h / img.height);
+          itemImageNode.size({ width: img.width * scale, height: img.height * scale });
+          itemImageNode.position({ x: ZONES.main.x + (ZONES.main.w - itemImageNode.width())/2, y: ZONES.main.y + (ZONES.main.h - itemImageNode.height())/2 });
+        }
+
+        stage.batchDraw();
+      }
+
+      // Inputs
+      const titleInput = document.getElementById('titleInput');
+      const bodyInput = document.getElementById('bodyInput');
+      titleInput.addEventListener('input', () => { titleText.text(titleInput.value || ''); textLayer.draw(); });
+      bodyInput.addEventListener('input', () => { bodyText.text(bodyInput.value || ''); textLayer.draw(); });
+
+      // Text style controls
+      const titleColor = document.getElementById('titleColor');
+      const titleSize = document.getElementById('titleSize');
+      const titleFont = document.getElementById('titleFont');
+      const titleWeight = document.getElementById('titleWeight');
+      function applyTitleStyle() {
+        if (titleColor) titleText.fill(titleColor.value || '#ffffff');
+        if (titleSize) {
+          const sz = Math.max(8, parseInt(titleSize.value || '32', 10) || 32);
+          titleText.fontSize(sz);
+        }
+        if (titleFont) titleText.fontFamily(titleFont.value || 'Noto Sans JP, system-ui, sans-serif');
+        if (titleWeight) titleText.fontStyle(titleWeight.value === '700' ? '700' : 'normal');
+        textLayer.draw();
+      }
+      titleColor?.addEventListener('input', applyTitleStyle);
+      titleSize?.addEventListener('input', applyTitleStyle);
+      titleFont?.addEventListener('change', applyTitleStyle);
+      titleWeight?.addEventListener('change', applyTitleStyle);
+
+      const bodyColor = document.getElementById('bodyColor');
+      const bodySize = document.getElementById('bodySize');
+      const bodyFont = document.getElementById('bodyFont');
+      function applyBodyStyle() {
+        if (bodyColor) bodyText.fill(bodyColor.value || '#e6edf3');
+        if (bodySize) {
+          const sz = Math.max(8, parseInt(bodySize.value || '20', 10) || 20);
+          bodyText.fontSize(sz);
+        }
+        if (bodyFont) bodyText.fontFamily(bodyFont.value || 'Noto Sans JP, system-ui, sans-serif');
+        textLayer.draw();
+      }
+      bodyColor?.addEventListener('input', applyBodyStyle);
+      bodySize?.addEventListener('input', applyBodyStyle);
+      bodyFont?.addEventListener('change', applyBodyStyle);
+
+      // Buttons
+      const alBtn = document.getElementById('autoLayoutBtn');
+      if (alBtn) alBtn.addEventListener('click', autoLayout);
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        const uri = stage.toDataURL({ mimeType: 'image/png', pixelRatio: 2 });
+        const a = document.createElement('a');
+        a.href = uri;
+        a.download = 'card.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      });
+
+      // Font selects events
+      document.getElementById('titleFontSelect')?.addEventListener('change', async (e)=>{
+        const sel = e.target; const fam = sel.value; const url = sel.options[sel.selectedIndex].dataset.url;
+        await applyFontTo('title', fam, url);
+      });
+      document.getElementById('bodyFontSelect')?.addEventListener('change', async (e)=>{
+        const sel = e.target; const fam = sel.value; const url = sel.options[sel.selectedIndex].dataset.url;
+        await applyFontTo('body', fam, url);
+      });
+      document.getElementById('openFontMgrTitle')?.addEventListener('click', ()=> openFontManager('title'));
+      document.getElementById('openFontMgrBody')?.addEventListener('click', ()=> openFontManager('body'));
+
+      // Item picker & upload
+      document.getElementById('openItemPicker')?.addEventListener('click', () => openItemPicker());
+      document.getElementById('openBgPicker')?.addEventListener('click', () => openAssetPicker('bg'));
+      document.getElementById('openFramePicker')?.addEventListener('click', () => openAssetPicker('frame'));
+      document.getElementById('openIconPicker')?.addEventListener('click', () => openAssetPicker('icon'));
+      // base icon slot is 0
+      document.getElementById('openIconPicker')?.addEventListener('click', () => { currentIconSlot = 0; });
+      document.getElementById('openItemUpload')?.addEventListener('click', () => openItemUpload());
+
+      function openItemPicker(){
+        const modal = document.getElementById('itemModal');
+        buildItemGrid();
+        modal.style.display='grid';
+      }
+      function closeItemPicker(){ document.getElementById('itemModal').style.display='none'; }
+      function buildItemGrid(){
+        const grid = document.getElementById('itemGrid');
+        if (!grid) return;
+        grid.innerHTML='';
+        // Uploaded (session/IndexedDB)
+        (window.UPLOAD_ITEMS || []).forEach(u => {
+          const card = document.createElement('div'); card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch';
+          const d = document.createElement('div'); d.className = 'thumb item-thumb';
+          const img = document.createElement('img'); img.src = u.url; d.appendChild(img);
+          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = `${u.name}（ブラウザ内）`; d.appendChild(cap);
+          d.title = u.name;
+          d.addEventListener('click', async ()=>{ await addItemImageURL(u.url); closeItemPicker(); });
+          const del = document.createElement('button'); del.textContent='削除'; del.style.marginTop='6px'; del.style.fontSize='12px'; del.addEventListener('click', async (ev)=>{
+            ev.stopPropagation();
+            if (!confirm('このブラウザから削除します。よろしいですか？')) return;
+            await idbDeleteUpload(u.id);
+            await loadUploads();
+            buildItemGrid();
+          });
+          card.appendChild(d); card.appendChild(del);
+          grid.appendChild(card);
+        });
+        // Manifest items
+        (window.ASSET_ITEM_LIST || []).forEach(url => {
+          const d = document.createElement('div'); d.className = 'thumb item-thumb';
+          const img = document.createElement('img'); img.src = url; d.appendChild(img);
+          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = url.split('/').pop(); d.appendChild(cap);
+          d.title = url.split('/').pop();
+          d.addEventListener('click', async ()=>{ await addItemImageURL(url); closeItemPicker(); });
+          grid.appendChild(d);
+        });
+        const total = (window.UPLOAD_ITEMS?.length || 0) + (window.ASSET_ITEM_LIST?.length || 0);
+        const itCount = document.getElementById('itemCount'); if (itCount) itCount.textContent = `(${total})`;
+      }
+      async function openItemUpload(){
+        const up = document.getElementById('itemUploadInput');
+        up.value=''; up.click();
+      }
+      // IndexDB helpers for uploads (no OS permissions needed)
+      function idbOpen(){
+        return new Promise((resolve,reject)=>{
+          const req = indexedDB.open('cardgen-db', 1);
+          req.onupgradeneeded = (e)=>{
+            const db = req.result;
+            if (!db.objectStoreNames.contains('uploads')) db.createObjectStore('uploads', { keyPath: 'id', autoIncrement: true });
+          };
+          req.onsuccess = ()=> resolve(req.result);
+          req.onerror = ()=> reject(req.error);
+        });
+      }
+      async function idbAddUpload(file, category){
+        const db = await idbOpen();
+        return new Promise((resolve,reject)=>{
+          const tx = db.transaction('uploads','readwrite');
+          const st = tx.objectStore('uploads');
+          const rec = { name: file.name, type: file.type, blob: file, createdAt: Date.now(), category: category || 'item' };
+          const r = st.add(rec);
+          r.onsuccess = ()=> resolve(r.result);
+          r.onerror = ()=> reject(r.error);
+        });
+      }
+      async function idbListUploads(){
+        const db = await idbOpen();
+        return new Promise((resolve,reject)=>{
+          const tx = db.transaction('uploads','readonly');
+          const st = tx.objectStore('uploads');
+          const items = [];
+          const r = st.openCursor();
+          r.onsuccess = (e)=>{
+            const cur = e.target.result;
+            if (cur){ items.push(cur.value); cur.continue(); }
+            else resolve(items);
+          };
+          r.onerror = ()=> reject(r.error);
+        });
+      }
+      async function idbDeleteUpload(id){
+        const db = await idbOpen();
+        return new Promise((resolve,reject)=>{
+          const tx = db.transaction('uploads','readwrite');
+          const st = tx.objectStore('uploads');
+          const r = st.delete(id);
+          r.onsuccess = ()=> resolve();
+          r.onerror = ()=> reject(r.error);
+        });
+      }
+      async function loadUploads(){
+        try {
+          const list = await idbListUploads();
+          // create object URLs for display
+          const mapRec = (rec)=> ({ id: rec.id, name: rec.name, url: URL.createObjectURL(rec.blob), type: rec.type, category: rec.category||'item' });
+          const mapped = list.map(mapRec);
+          window.UPLOAD_ITEMS = mapped.filter(r=>r.category==='item');
+          window.UPLOAD_BG = mapped.filter(r=>r.category==='bg');
+          window.UPLOAD_FRAME = mapped.filter(r=>r.category==='frame');
+          window.UPLOAD_ICON = mapped.filter(r=>r.category==='icon');
+        } catch(e) {
+          console.warn('IndexedDB not available', e);
+          window.UPLOAD_ITEMS = []; window.UPLOAD_BG=[]; window.UPLOAD_FRAME=[]; window.UPLOAD_ICON=[];
+        }
+      }
+      document.getElementById('itemUploadInput')?.addEventListener('change', async (e)=>{
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        try {
+          await idbAddUpload(f, 'item');
+          await loadUploads();
+          buildItemGrid();
+        } catch(err) {
+          console.error('Upload store failed', err);
+        }
+      });
+
+      // Size adjusters for item and icon
+      function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
+      function scaleKonvaImageKeepCenter(node, factor, minW=24, maxW=ZONES.main.w){
+        if (!node) return;
+        const w = node.width(); const h = node.height();
+        let newW = clamp(w * factor, minW, maxW);
+        let newH = h * (newW / w);
+        const cx = node.x() + w/2; const cy = node.y() + h/2;
+        node.size({ width: newW, height: newH });
+        node.position({ x: cx - newW/2, y: cy - newH/2 });
+        node.getLayer()?.batchDraw();
+      }
+      document.getElementById('itemScaleMinus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(itemImageNode, 0.9, 32, ZONES.main.w));
+      document.getElementById('itemScalePlus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(itemImageNode, 1.1, 32, ZONES.main.w));
+      document.getElementById('iconScaleMinus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[0], 0.9, 16, 256));
+      document.getElementById('iconScalePlus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[0], 1.1, 16, 256));
+
+      // Dynamic extra areas (icons 2/3, body2)
+      const createdIconAreas = [false,false,false]; // slot0 is base (not dynamic)
+      document.getElementById('addIconArea')?.addEventListener('click', ()=>{
+        const slot = [1,2].find(i => !createdIconAreas[i]);
+        if (slot === undefined) return;
+        const container = document.getElementById('extraAreas');
+        const wrap = document.createElement('div'); wrap.className='section';
+        const title = document.createElement('div'); title.className='muted'; title.textContent = `追加アイコン${slot+1}`;
+        const row = document.createElement('div'); row.className='row'; row.style.gap='6px';
+        const btnSel = document.createElement('button'); btnSel.textContent='アイコンを選択'; btnSel.className='primary';
+        btnSel.addEventListener('click', ()=>{ currentIconSlot = slot; openAssetPicker('icon'); });
+        const btnMinus = document.createElement('button'); btnMinus.textContent='－'; btnMinus.style.width='32px'; btnMinus.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[slot], 0.9, 16, 256));
+        const btnPlus  = document.createElement('button'); btnPlus.textContent='＋'; btnPlus.style.width='32px'; btnPlus.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[slot], 1.1, 16, 256));
+        const btnDel = document.createElement('button'); btnDel.textContent='削除'; btnDel.addEventListener('click', ()=>{
+          if (iconImageNodes[slot]) { iconImageNodes[slot].destroy(); iconImageNodes[slot]=null; iconCurrentUrls[slot]=null; iconsLayer.draw(); }
+          wrap.remove(); createdIconAreas[slot]=false;
+        });
+        row.appendChild(btnSel); row.appendChild(btnMinus); row.appendChild(btnPlus); row.appendChild(btnDel);
+        wrap.appendChild(title); wrap.appendChild(row); container.appendChild(wrap);
+        createdIconAreas[slot]=true;
+      });
+
+      let body2AreaCreated = false;
+      document.getElementById('addBodyArea')?.addEventListener('click', ()=>{
+        if (body2AreaCreated) return;
+        const container = document.getElementById('extraAreas');
+        const wrap = document.createElement('div'); wrap.className='section';
+        const title = document.createElement('div'); title.className='muted'; title.textContent = '追加本文2';
+        const ta = document.createElement('textarea'); ta.id='bodyInput2'; ta.placeholder='本文2を入力'; ta.value=bodyText2.text();
+        ta.addEventListener('input', ()=>{ bodyText2.text(ta.value||''); textLayer.draw(); });
+        // 詳細（色/サイズ/フォント）
+        const details = document.createElement('details'); details.style.marginTop = '6px';
+        const sum = document.createElement('summary'); sum.textContent = '詳細'; sum.style.cursor = 'pointer'; sum.style.color = 'var(--muted)'; details.appendChild(sum);
+        const row = document.createElement('div'); row.className='row'; row.style.gap='8px'; row.style.marginTop='6px';
+        const labColor = document.createElement('label'); labColor.textContent='色 ';
+        const inpColor = document.createElement('input'); inpColor.type='color';
+        // 初期値を既存ノードから取得（fillが#表記でない場合のfallback）
+        try { inpColor.value = bodyText2.fill() || '#e6edf3'; } catch(e){ inpColor.value = '#e6edf3'; }
+        inpColor.addEventListener('input', ()=>{ bodyText2.fill(inpColor.value||'#e6edf3'); textLayer.draw(); });
+        labColor.appendChild(inpColor);
+        const labSize = document.createElement('label'); labSize.textContent='サイズ(px) ';
+        const inpSize = document.createElement('input'); inpSize.type='number'; inpSize.style.width='72px'; inpSize.value = String(bodyText2.fontSize()||24);
+        inpSize.addEventListener('input', ()=>{ const v = clamp(parseInt(inpSize.value||'24',10), 8, 200); bodyText2.fontSize(v); textLayer.draw(); });
+        labSize.appendChild(inpSize);
+        const labFont = document.createElement('label'); labFont.textContent='フォント ';
+        const inpFont = document.createElement('input'); inpFont.type='text'; inpFont.style.width='220px'; inpFont.value = bodyText2.fontFamily() || 'Noto Sans JP, system-ui, sans-serif';
+        inpFont.addEventListener('change', ()=>{ bodyText2.fontFamily(inpFont.value||'Noto Sans JP, system-ui, sans-serif'); textLayer.draw(); });
+        labFont.appendChild(inpFont);
+        row.appendChild(labColor); row.appendChild(labSize); row.appendChild(labFont); details.appendChild(row);
+
+        const btnDel = document.createElement('button'); btnDel.textContent='本文2を削除'; btnDel.style.marginTop='6px';
+        btnDel.addEventListener('click', ()=>{ bodyText2.text(''); textLayer.draw(); wrap.remove(); body2AreaCreated=false; });
+        wrap.appendChild(title); wrap.appendChild(ta); wrap.appendChild(details); wrap.appendChild(btnDel); container.appendChild(wrap);
+        body2AreaCreated = true;
+      });
+
+      // Asset modal upload (bg/frame/icon)
+      let currentAssetUploadType = 'bg';
+      document.getElementById('openItemUpload')?.addEventListener('click', ()=>{}); // noop if exists from previous wiring
+      document.getElementById('assetUploadInput')?.addEventListener('change', async (e)=>{
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        try {
+          await idbAddUpload(f, currentAssetUploadType);
+          await loadUploads();
+          buildAssetGrid(currentAssetUploadType);
+        } catch(err) { console.error('Asset upload failed', err); }
+      });
+
+      // Asset picker (bg/frame/icon)
+      function openAssetPicker(type){
+        const modal = document.getElementById('assetModal');
+        const title = document.getElementById('assetModalTitle');
+        if (type==='bg') title.textContent='背景を選択';
+        else if (type==='frame') title.textContent='枠を選択';
+        else title.textContent='アイコンを選択';
+        currentAssetUploadType = type;
+        document.getElementById('openAssetUpload')?.addEventListener('click', ()=>{
+          const up = document.getElementById('assetUploadInput'); up.value=''; up.click();
+        }, { once: true });
+        buildAssetGrid(type);
+        modal.style.display='grid';
+      }
+      function buildAssetGrid(type){
+        const grid = document.getElementById('assetGrid');
+        if (!grid) return;
+        grid.innerHTML='';
+        let manifest = [], uploaded = [];
+        if (type==='bg') { manifest = (window.ASSET_BG_LIST||[]); uploaded = (window.UPLOAD_BG||[]); }
+        else if (type==='frame') { manifest = (window.ASSET_FRAME_LIST||[]); uploaded = (window.UPLOAD_FRAME||[]); }
+        else { manifest = (window.ASSET_ICON_LIST||[]); uploaded = (window.UPLOAD_ICON||[]); }
+        // Uploaded first with delete
+        (uploaded||[]).forEach(u => {
+          const card = document.createElement('div'); card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch';
+          const d = document.createElement('div'); d.className = 'thumb item-thumb';
+          const img = document.createElement('img'); img.src = u.url; d.appendChild(img);
+          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = `${u.name}（ブラウザ内）`; d.appendChild(cap);
+          d.addEventListener('click', async ()=>{
+            const url = u.url;
+            if (type==='bg') await applyBackgroundImageURL(url);
+            else if (type==='frame') await applyFrameImageURL(url);
+            else await addBadgeIconURL(url);
+            document.getElementById('assetModal').style.display='none';
+          });
+          const del = document.createElement('button'); del.textContent='削除'; del.style.marginTop='6px'; del.style.fontSize='12px'; del.addEventListener('click', async (ev)=>{
+            ev.stopPropagation(); await idbDeleteUpload(u.id); await loadUploads(); buildAssetGrid(type);
+          });
+          card.appendChild(d); card.appendChild(del); grid.appendChild(card);
+        });
+        // Manifest entries (no delete)
+        (manifest||[]).forEach(url => {
+          const d = document.createElement('div'); d.className = 'thumb item-thumb';
+          const img = document.createElement('img'); img.src = url; d.appendChild(img);
+          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = url.split('/').pop(); d.appendChild(cap);
+          d.addEventListener('click', async ()=>{
+            if (type==='bg') await applyBackgroundImageURL(url);
+            else if (type==='frame') await applyFrameImageURL(url);
+            else await addBadgeIconURL(url);
+            document.getElementById('assetModal').style.display='none';
+          });
+          grid.appendChild(d);
+        });
+      }
+
+      // (ステータスは廃止)
+
+      // Guides toggle
+      const toggleGuides = document.getElementById('toggleGuides');
+      let showGuides = false;
+      function drawGuides() {
+        guideLayer.destroyChildren();
+        if (!showGuides) { guideLayer.draw(); return; }
+        const addRect = (x,y,w,h,dash) => guideLayer.add(new Konva.Rect({ x,y,width:w,height:h, stroke:'#5f9fff', strokeWidth:1, dash: dash||[4,3], listening:false }));
+        const addLine = (x1,y1,x2,y2,dash) => guideLayer.add(new Konva.Line({ points:[x1,y1,x2,y2], stroke:'#5f9fff', strokeWidth:1, dash: dash||[4,3], listening:false }));
+        addRect(INSET.x, INSET.y, INSET.w, INSET.h);
+        addRect(ZONES.main.x, ZONES.main.y, ZONES.main.w, ZONES.main.h);
+        addRect(ZONES.title.x, ZONES.title.y, ZONES.title.w, ZONES.title.h);
+        addRect(ZONES.desc.x, ZONES.desc.y, ZONES.desc.w, ZONES.desc.h);
+        addLine(ZONES.title.x, ZONES.title.y + ZONES.title.h, ZONES.title.x + ZONES.title.w, ZONES.title.y + ZONES.title.h);
+        addLine(ZONES.desc.x, ZONES.desc.y, ZONES.desc.x + ZONES.desc.w, ZONES.desc.y);
+        guideLayer.draw();
+      }
+      toggleGuides?.addEventListener('change', () => { showGuides = toggleGuides.checked; drawGuides(); });
+
+      // Preview scaling
+      const zoomWrap = document.getElementById('stageZoom');
+      const viewScaleSel = document.getElementById('viewScale');
+      function applyScale(scale) {
+        zoomWrap.style.transform = `scale(${scale})`;
+      }
+      function fitToViewport() {
+        const wrap = document.getElementById('stageWrap');
+        const w = wrap.clientWidth - 16; // padding allowance
+        const h = wrap.clientHeight - 16;
+        const s = Math.min(w / CANVAS_W, h / CANVAS_H, 1);
+        applyScale(s > 0 ? s : 1);
+      }
+      viewScaleSel.addEventListener('change', () => {
+        const v = viewScaleSel.value;
+        if (v === 'fit') { fitToViewport(); }
+        else { applyScale(parseFloat(v)); }
+      });
+      window.addEventListener('resize', () => {
+        if (viewScaleSel.value === 'fit') fitToViewport();
+      });
+
+      // Load manifest if present, then init
+      async function loadManifestAndInit() {
+        const isFile = (location.protocol === 'file:' || location.origin === 'null');
+        if (!isFile) {
+          try {
+            const res = await fetch('assets/manifest.json', { cache: 'no-cache' });
+            if (res.ok) {
+              const data = await res.json();
+              window.ASSET_BG_LIST = (data.backgrounds || []).map(s => s);
+              window.ASSET_FRAME_LIST = (data.frames || []).map(s => s);
+              window.ASSET_ICON_LIST = (data.icons || []).map(s => s);
+              window.ASSET_ITEM_LIST = (data.items || []).map(s => s);
+            }
+          } catch (e) {
+            // ignore, fallback to placeholders
+          }
+        }
+        await loadUploads();
+        buildThumbs();
+        // Preferred initial assets
+        const desired = {
+          bg: 'SSR.png',          // 背景
+          frame: 'frame3.png',    // 枠
+          item: 'soad.png',       // アイテム
+          icon: 'sun.png',        // アイコン
+        };
+        const pickByName = (list, name) => {
+          try { return (list||[]).find(u => u.split('/').pop() === name) || null; } catch(_) { return null; }
+        };
+        // Background
+        if (window.ASSET_BG_LIST && window.ASSET_BG_LIST.length) {
+          const urlBg = pickByName(window.ASSET_BG_LIST, desired.bg) || window.ASSET_BG_LIST[0];
+          await applyBackgroundImageURL(urlBg);
+        } else {
+          applyBackground(BACKGROUNDS[0]);
+        }
+        // Frame
+        if (window.ASSET_FRAME_LIST && window.ASSET_FRAME_LIST.length) {
+          const urlFr = pickByName(window.ASSET_FRAME_LIST, desired.frame) || window.ASSET_FRAME_LIST[0];
+          await applyFrameImageURL(urlFr);
+        } else {
+          applyFrame(FRAMES[0]);
+        }
+        // Item (optional)
+        if (window.ASSET_ITEM_LIST && window.ASSET_ITEM_LIST.length) {
+          const urlItem = pickByName(window.ASSET_ITEM_LIST, desired.item);
+          if (urlItem) { await addItemImageURL(urlItem); }
+        }
+        // Icon in first slot (optional)
+        if (window.ASSET_ICON_LIST && window.ASSET_ICON_LIST.length) {
+          const urlIcon = pickByName(window.ASSET_ICON_LIST, desired.icon);
+          if (urlIcon) { currentIconSlot = 0; await addBadgeIconURL(urlIcon); }
+        }
+        rebuildFontSelects();
+      }
+      titleInput.value = '勇者のつるぎ';
+      bodyInput.value = '魔王を倒した伝説のつるぎ。\n勇者の押し入れの奥底に眠る。';
+      titleText.text(titleInput.value);
+      bodyText.text(bodyInput.value);
+      // Apply initial styles from controls
+      applyTitleStyle();
+      applyBodyStyle();
+      autoLayout();
+      loadManifestAndInit();
+      // Initial preview scale: 50%
+      document.getElementById('viewScale').value = '0.5';
+      setTimeout(() => applyScale(0.5), 0);
+    </script>
+  </body>
+  </html>

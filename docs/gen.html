@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>AI画像生成ツール（gpt-image-1 / dall-e-3）</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg:#0f1117; --panel:#171923; --line:#2a2f3a; --text:#e6edf3; --muted:#9aa4b2; --accent:#5f9fff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif}
+    header,footer{padding:12px 16px;border-bottom:1px solid var(--line)}
+    header h1{margin:0;font-size:16px}
+    main{display:grid;grid-template-columns:340px 1fr;gap:12px;padding:12px;min-height:calc(100vh - 96px)}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+    .section{margin-bottom:12px}
+    .section h2{margin:0 0 6px;color:var(--muted);font-size:13px}
+    label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+    input[type="text"],input[type="password"],input[type="number"],textarea,select{
+      width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:#11141b;color:var(--text)
+    }
+    textarea{min-height:96px;resize:vertical}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    button{appearance:none;border:1px solid var(--line);background:#1b2230;color:var(--text);
+      border-radius:6px;padding:8px 10px;cursor:pointer;font-weight:600}
+    button.primary{background:#2959b3;border-color:#2f61be}
+    button:hover{filter:brightness(1.05)}
+    .muted{color:var(--muted);font-size:12px}
+    .kv{display:grid;grid-template-columns:130px 1fr;gap:6px;align-items:center}
+    .preview{display:grid;place-items:center;height:100%;min-height:420px;background:#0b0d13;border:1px dashed var(--line);border-radius:8px;padding:8px}
+    .thumb{max-width:100%;max-height:80vh;border-radius:6px;border:1px solid var(--line);background:#000}
+    .gallery{width:100%;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+    .gallery-item{background:#0a0f16;border:1px solid var(--line);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px}
+    .gallery-item img{width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#000}
+    .gallery-item .row{justify-content:flex-end}
+    details{border:1px solid var(--line);border-radius:8px;padding:6px}
+    details>summary{cursor:pointer;color:var(--muted)}
+    .hint{margin-top:4px;color:var(--muted);font-size:12px}
+    /* 追加：スピナー */
+    .spinner {
+    width: 18px; height: 18px; border: 2px solid #2a2f3a; border-top-color: #5f9fff;
+    border-radius: 50%; display: inline-block; animation: spin 0.9s linear infinite; vertical-align: -3px;
+    margin-left: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display:none; }
+  /* ボタン無効時の見た目（任意） */
+  button[disabled] { opacity: 0.6; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI画像生成ツール（素材作成向け）</h1>
+    <span style="flex:1"></span>
+    <a href="index.html" style="color:#5f9fff; text-decoration:none; font-weight:600">カード作成へ</a>
+  </header>
+
+  <main>
+    <!-- 左ペイン：設定 -->
+    <aside class="panel">
+      <div class="section">
+        <h2>API キー</h2>
+        <div class="kv">
+          <div>OpenAI API Key</div>
+          <input id="apiKey" type="password" placeholder="sk-..." autocomplete="new-password" />
+        </div>
+        <div class="hint">※ メモリ保持のみ。保存しません（ページを閉じると消えます）。</div>
+      </div>
+
+      <div class="section">
+        <h2>プロンプト</h2>
+        <textarea id="prompt" placeholder="例）中央に一本のアニメ調の剣。背景はシンプル。高コントラスト、くっきり、線の輪郭が綺麗。"></textarea>
+        <div class="row">
+          <button class="primary" id="genBtn">生成する</button>
+          <label class="row" style="gap:6px;margin-left:4px;">
+            <input type="checkbox" id="autoDownload" checked> 自動でダウンロード
+          </label>
+        </div>
+        <div id="status" class="hint" aria-live="polite"></div>
+        <div class="hint">
+        概算コスト：<b id="costNow">$0.000 / 約 0 円</b>（サイズ・品質・枚数からの推定）
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>基本設定</h2>
+        <div class="kv">
+          <div>モデル</div>
+          <select id="model">
+            <option value="gpt-image-1" selected>gpt-image-1（推奨）</option>
+            <option value="dall-e-3">dall-e-3</option>
+          </select>
+
+          <div>サイズ</div>
+          <select id="size">
+            <!-- gpt-image-1 既定＝1024正方形。必要に応じて横/縦/auto -->
+            <option value="1024x1024" selected>1024 x 1024（既定）</option>
+            <option value="1536x1024">1536 x 1024（横長）</option>
+            <option value="1024x1536">1024 x 1536（縦長）</option>
+            <option value="auto">auto</option>
+          </select>
+
+          <div>品質</div>
+          <select id="quality">
+            <!-- あなたの要望通り UI 既定は low。gpt-image-1: auto/high/medium/low -->
+            <option value="low" selected>low（既定）</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
+            <option value="auto">auto</option>
+          </select>
+
+          <div>生成枚数</div>
+          <input id="count" type="number" min="1" max="10" value="1">
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>詳細設定</h2>
+        <details open>
+          <summary>Advanced settings（必要な場合のみ）</summary>
+          <div class="kv" style="margin-top:8px">
+            <div>出力形式</div>
+            <select id="outputFormat">
+              <option value="png" selected>png（透過対応・既定）</option>
+              <option value="webp">webp（透過対応）</option>
+              <option value="jpeg">jpeg（透過不可）</option>
+            </select>
+
+            <div>背景</div>
+            <select id="background">
+              <option value="transparent" selected>transparent（透過・素材向け）</option>
+              <option value="auto">auto（自動）</option>
+              <option value="opaque">opaque（不透明）</option>
+            </select>
+
+            <div>モデレーション</div>
+            <select id="moderation">
+              <option value="auto" selected>auto（既定）</option>
+              <option value="low">low（緩め）</option>
+            </select>
+
+            <div>圧縮率</div>
+            <input id="outputCompression" type="number" min="0" max="100" value="100" />
+
+            <div>ストリーミング</div>
+            <select id="stream">
+              <option value="false" selected>false（既定）</option>
+              <option value="true">true（段階表示・上級）</option>
+            </select>
+          </div>
+          <div class="hint">
+            ・透過（transparent）を使う場合は <b>png / webp</b> を選択してください（jpegは透過不可）。<br>
+            ・圧縮率は <b>jpeg / webp のみ有効</b>。png選択時は無視（自動で無効化）。<br>
+          </div>
+        </details>
+      </div>
+
+      
+
+      
+    </aside>
+
+    <!-- 右ペイン：プレビュー -->
+    <section class="panel">
+      <div class="section">
+        <h2>プレビュー</h2>
+        <div id="preview" class="preview">
+          <img id="img" class="thumb" alt="プレビュー" style="display:none">
+          <div id="gallery" class="gallery" style="display:none"></div>
+          <div id="empty" class="muted">ここに生成結果またはアップロード画像が表示されます</div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="downloadBtn">画像をダウンロード</button>
+          <span class="muted" id="meta"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="muted">
+    デモ用途：APIキーは保存しません。商用運用はサーバレス関数やバックエンド経由を推奨。
+  </footer>
+
+  <script>
+    let OPENAI_API_KEY = null;
+
+    // UI取得
+    const els = {
+      apiKey: document.getElementById('apiKey'),
+      prompt: document.getElementById('prompt'),
+      model: document.getElementById('model'),
+      size: document.getElementById('size'),
+      quality: document.getElementById('quality'),
+      outputFormat: document.getElementById('outputFormat'),
+      background: document.getElementById('background'),
+      moderation: document.getElementById('moderation'),
+      outputCompression: document.getElementById('outputCompression'),
+      count: document.getElementById('count'),
+      stream: document.getElementById('stream'),
+      genBtn: document.getElementById('genBtn'),
+      autoDownload: document.getElementById('autoDownload'),
+      img: document.getElementById('img'),
+      gallery: document.getElementById('gallery'),
+      empty: document.getElementById('empty'),
+      preview: document.getElementById('preview'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      status: document.getElementById('status'),
+      meta: document.getElementById('meta'),
+    };
+
+    // 入力ハンドリング
+    els.apiKey.addEventListener('change', () => {
+      OPENAI_API_KEY = (els.apiKey.value || '').trim() || null;
+      els.apiKey.value = ''; // 画面に残さない（肩越し対策）
+      setStatus(OPENAI_API_KEY ? 'APIキー連携：OK（メモリ保持）' : 'APIキー未連携');
+    });
+
+    els.background.addEventListener('change', enforceFormatRules);
+    els.outputFormat.addEventListener('change', enforceFormatRules);
+    function enforceFormatRules(){
+      // 透過背景のときは png/webp に矯正
+      if (els.background.value === 'transparent' && !['png','webp'].includes(els.outputFormat.value)) {
+        els.outputFormat.value = 'png';
+      }
+      // png のときは圧縮率入力を無効化（jpeg/webpのみ有効）
+      const fmt = els.outputFormat.value;
+      const isLossy = (fmt === 'jpeg' || fmt === 'webp');
+      els.outputCompression.disabled = !isLossy;
+    }
+    enforceFormatRules();
+
+    // 概算コスト算出（USD→JPY 150倍）
+    const USD_TO_JPY = 150;
+    // 単価テーブル（1枚あたり）
+    const COST_TABLE = {
+      'gpt-image-1': {
+        low:   { '1024x1024': 0.011, '1024x1536': 0.016, '1536x1024': 0.016 },
+        medium:{ '1024x1024': 0.042, '1024x1536': 0.063, '1536x1024': 0.063 },
+        high:  { '1024x1024': 0.167, '1024x1536': 0.25,  '1536x1024': 0.25  }
+      },
+      'dall-e-3': {
+        standard: { '1024x1024': 0.04, '1024x1792': 0.08, '1792x1024': 0.08 },
+        hd:       { '1024x1024': 0.08, '1024x1792': 0.12, '1792x1024': 0.12 }
+      }
+    };
+
+    function normalizeForCost(model, size, quality){
+      if (model === 'gpt-image-1') {
+        // autoはlow扱い、サイズautoは1024x1024扱い
+        const q = (['low','medium','high'].includes(quality) ? quality : 'low');
+        const s = (size === 'auto' ? '1024x1024' : size);
+        return { model, size: s, quality: q };
+      } else {
+        // dall-e-3: sizeを対応表に、qualityはhighならhd、それ以外standard
+        const q = (quality === 'high') ? 'hd' : 'standard';
+        let s = '1024x1024';
+        if (size === '1536x1024') s = '1792x1024';
+        else if (size === '1024x1536') s = '1024x1792';
+        return { model, size: s, quality: q };
+      }
+    }
+
+    function estimateCostUSD(){
+      const model = els.model.value;
+      const size = els.size.value;
+      const quality = els.quality.value;
+      const { model: m, size: s, quality: q } = normalizeForCost(model, size, quality);
+      const table = COST_TABLE[m] || {};
+      const row = table[q] || {};
+      const usd = row[s];
+      if (typeof usd !== 'number') return 0;
+      return usd; // 1枚あたり
+    }
+
+    function updateCost(){
+      const usdPer = estimateCostUSD();
+      const n = clamp(parseInt(els.count.value || '1', 10), 1, 999);
+      const usd = usdPer * n;
+      const jpy = usd * USD_TO_JPY;
+      const el = document.getElementById('costNow');
+      if (!el) return;
+      el.textContent = `$${usd.toFixed(3)} / 約 ${Math.round(jpy)} 円`;
+    }
+
+    // 設定変更時に概算更新
+    ['model','size','quality','outputFormat','background','count'].forEach(id => {
+      const x = els[id]; if (x) x.addEventListener('change', updateCost);
+    });
+    // 初期反映
+    updateCost();
+
+    // （画像アップロードUIは削除）
+
+    // 生成
+    els.genBtn.addEventListener('click', async () => {
+      if (isBusy) return; // ← すでに実行中なら無視
+
+      if (!OPENAI_API_KEY) return alert('先にAPIキーを入力してください。');
+      const prompt = (els.prompt.value || '').trim();
+      if (!prompt) return alert('プロンプトを入力してください。');
+
+      setBusy(true, '生成中…');
+      try {
+        const body = buildRequestBody();
+        const res = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        // data.data に複数枚入り得る（gpt-image-1）。dall-e-3 は実質1枚だが配列処理で包括。
+        const outUrls = [];
+        let mime = body.output_format || 'png';
+        for (const item of (data?.data || [])) {
+          let b64 = item?.b64_json;
+          if (!b64 && item?.url) {
+            const blob = await fetch(item.url).then(r => r.blob());
+            mime = (blob.type || 'image/png').split('/')[1] || 'png';
+            const reader = new FileReader();
+            b64 = await new Promise((resolve) => {
+              reader.onload = () => resolve(reader.result.split(',')[1]);
+              reader.readAsDataURL(blob);
+            });
+          }
+          if (b64) outUrls.push(`data:image/${mime};base64,${b64}`);
+        }
+        if (outUrls.length === 0) throw new Error('レスポンスから画像が取得できませんでした。');
+
+        const note = [
+          `model=${body.model}`,
+          `size=${body.size}`,
+          `quality=${body.quality}`,
+          `format=${body.output_format}`,
+          `bg=${body.background}`,
+          `moderation=${body.moderation}`
+        ].join(' / ');
+        if (outUrls.length === 1) {
+          showImage(outUrls[0], { note });
+        } else {
+          showImages(outUrls, { note });
+        }
+
+        // 自動ダウンロード
+        if (els.autoDownload.checked) {
+          const ext = (mime === 'jpeg' ? 'jpg' : mime);
+          outUrls.forEach((u, i) => setTimeout(() => triggerDownload(u, `gen_${Date.now()}_${i+1}.${ext}`), i * 400));
+        }
+        setStatus('生成完了');
+      } catch (e) {
+        console.error(e);
+        setStatus('生成に失敗しました：' + e.message);
+        alert('生成に失敗しました：\n' + e.message);
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    // ダウンロード
+    els.downloadBtn.addEventListener('click', () => {
+      // ギャラリー表示中は全画像を順次ダウンロード
+      if (els.gallery && els.gallery.style.display !== 'none') {
+        const imgs = Array.from(els.gallery.querySelectorAll('img'));
+        if (imgs.length === 0) return alert('画像がありません。');
+        imgs.forEach((im, i) => {
+          const src = im.src;
+          const ext = (src.split(';')[0].split('/')[1] || 'png').replace('jpeg','jpg');
+          setTimeout(() => triggerDownload(src, `image_${Date.now()}_${i+1}.${ext}`), i * 400);
+        });
+        return;
+      }
+      if (!els.img.src) return alert('画像がありません。');
+      const ext = (els.img.src.split(';')[0].split('/')[1] || 'png').replace('jpeg','jpg');
+      triggerDownload(els.img.src, `image_${Date.now()}.${ext}`);
+    });
+
+    // ビルドするリクエストボディ（UI既定を反映）
+    function buildRequestBody(){
+      // モデルによる分岐
+      const model = els.model.value;
+      const body = {
+        model,
+        prompt: (els.prompt.value || '').trim(),
+      };
+
+      // サイズ・品質
+      const size = els.size.value;
+      const quality = els.quality.value;
+
+      const n = clamp(parseInt(els.count.value || '1', 10), 1, 10);
+      if (model === 'gpt-image-1') {
+        Object.assign(body, {
+          size,                 // 1024x1024 / 1536x1024 / 1024x1536 / auto
+          quality,              // auto/high/medium/low（UI既定=low）
+          output_format: els.outputFormat.value,  // png/webp/jpeg（UI既定=png）
+          background: els.background.value,       // transparent（UI既定）/auto/opaque
+          moderation: els.moderation.value,       // auto（UI既定）/low
+          n: n,                 // 指定枚数
+          stream: false,        // デモは固定
+          partial_images: 0
+        });
+        // 圧縮率（jpeg/webpのみ）
+        const fmt = els.outputFormat.value;
+        if (fmt === 'jpeg' || fmt === 'webp') {
+          const oc = clamp(parseInt(els.outputCompression.value || '100', 10), 0, 100);
+          body.output_compression = oc;
+        }
+        // 透過時の形式矯正
+        if (body.background === 'transparent' && !['png','webp'].includes(body.output_format)) {
+          body.output_format = 'png';
+        }
+      } else if (model === 'dall-e-3') {
+        // dall-e-3 は size: 1024x1024 / 1792x1024 / 1024x1792, quality: hd/standard
+        // ここでは UI を簡略化して gpt-image-1 に合わせて送るが、実際は切替UIを実装するのが推奨
+        Object.assign(body, {
+          size: size === '1536x1024' ? '1792x1024' : (size === '1024x1536' ? '1024x1792' : '1024x1024'),
+          quality: (quality === 'high') ? 'hd' : 'standard',
+          response_format: 'b64_json', // dall-e-3 は url / b64_json
+          n: 1
+        });
+        // 背景や出力形式オプションは gpt-image-1 専用なので無視される想定
+      }
+
+      return body;
+    }
+
+    // ユーティリティ
+    let isBusy = false;
+
+    function setBusy(b, msg){
+      isBusy = b;
+      els.genBtn.disabled = b;            // ← 二度押し防止
+      const sp = document.getElementById('spinner');
+      if (sp) sp.classList.toggle('hidden', !b);  // ← スピナー表示/非表示
+      els.status.textContent = msg || '';
+    }
+    function setStatus(msg){ els.status.textContent = msg || ''; }
+    function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
+    function showImage(src, {note}={}){
+      els.gallery.style.display = 'none';
+      els.gallery.innerHTML = '';
+      els.img.src = src;
+      els.img.style.display = 'block';
+      els.empty.style.display = 'none';
+      els.meta.textContent = note || '';
+    }
+    function showImages(urls, {note}={}){
+      els.img.style.display = 'none';
+      els.img.src = '';
+      els.gallery.innerHTML = '';
+      urls.forEach((u, i) => {
+        const item = document.createElement('div'); item.className='gallery-item';
+        const im = document.createElement('img'); im.src = u; im.alt = `生成画像 ${i+1}`; item.appendChild(im);
+        const row = document.createElement('div'); row.className = 'row';
+        const btn = document.createElement('button'); btn.textContent = 'ダウンロード'; btn.addEventListener('click', ()=>{
+          const ext = (u.split(';')[0].split('/')[1] || 'png').replace('jpeg','jpg');
+          triggerDownload(u, `image_${Date.now()}_${i+1}.${ext}`);
+        });
+        row.appendChild(btn); item.appendChild(row);
+        els.gallery.appendChild(item);
+      });
+      els.gallery.style.display = 'grid';
+      els.empty.style.display = 'none';
+      els.meta.textContent = note || '';
+    }
+    function triggerDownload(dataUrl, filename){
+      const a = document.createElement('a');
+      a.href = dataUrl; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+  </script>
+</body>
+</html>
