@@ -54,28 +54,6 @@ python3 -m http.server 8080 --bind 127.0.0.1
 # → http://localhost:8080
 ```
 
-## GitHub Pages（docs 方式）
-最も簡単に公開するには、リポジトリ直下の `docs/` を公開対象にします。本リポジトリは `docs/` を公開元として構成済みで、`.nojekyll` も配置済みです。
-
-手順
-- GitHub → リポジトリ → Settings → Pages
-- Source: Deploy from a branch
-- Branch: `main` / `docs` を選択（Save）
-- 数分待つと `https://<ユーザー名>.github.io/<リポジトリ名>/` で公開されます
-
-補足
-- `.nojekyll` は Jekyll を無効化し、素の HTML/CSS/JS をそのまま配信するための目印です。
-- ルート配下で相対パスを使っているため、そのまま `docs/` で動作します（`assets/manifest.json` も相対参照）。
-- 生成ページ（`gen.html`）はブラウザから OpenAI API を直接呼び出します。公開サイトでの「クライアント側 API キー使用」は推奨されません。鍵の露出防止のため、必要に応じてサーバレス関数経由をご検討ください。
-
-## public/ は消せる？二重管理の回避
-- 本プロジェクトは `docs/` を配信・開発のデフォルトとし、スクリプトも `docs/` を優先するよう更新済みです。
-- 既存の `public/` は互換のため残していますが、運用で不要なら削除可能です。
-  - `start.ps1` は `docs/` があればそちらを公開し、マニフェストも `docs/assets/manifest.json` に出力します。
-  - `scripts_gen_manifest.sh` は `docs/` を優先（引数で任意のルートを指定可）。
-  - Docker イメージは `docs/` を配信ルートとして取り込みます。
-- したがって、`public/` は削除しても動作に影響ありません（Git の履歴に残るため復元も容易）。
-
 ## 使い方（カード作成）
 1. ブラウザで `http://localhost:8080` を開く
 2. 左ペインから「背景/枠/アイテム/アイコンを選択」で素材モーダルを開く
