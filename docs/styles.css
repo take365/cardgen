@@ -96,8 +96,25 @@ button {
   appearance: none; border: 1px solid var(--line); background: #1b2230; color: var(--text);
   border-radius: 6px; padding: 8px 10px; cursor: pointer; font-weight: 600;
 }
-button.primary { background: #2959b3; border-color: #2f61be; }
+/* 統一: 水色ベース + 白文字 */
+button.primary {
+  background: var(--accent);
+  border-color: #4c8be6;
+  color: #ffffff;
+}
 button:hover { filter: brightness(1.05); }
 button:active { transform: translateY(1px); }
 
 footer { color: var(--muted); border-top: 1px solid var(--line); border-bottom: none; }
+
+/* Mobile readability: title/body inputs as white boxes */
+@media (max-width: 960px){
+  #titleInput, #bodyInput{
+    background: #ffffff;
+    color: #111111;
+    border-color: #cfd6e4;
+  }
+  #titleInput::placeholder, #bodyInput::placeholder{
+    color: #667085;
+  }
+}
