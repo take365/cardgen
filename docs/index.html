@@ -20,10 +20,17 @@
         .panel{ padding:10px; }
         /* show stage first on mobile */
         .stage-wrap{ order:1; }
-        aside.panel{ order:2; max-height:50vh; overflow:auto; }
+        #mobileDivider{ order:2; display:block; height:10px; cursor:row-resize; position:relative; }
+        #mobileDivider::before{ content:''; position:absolute; left:40%; right:40%; top:3px; height:4px; border-radius:3px; background:#2a2f3a; }
+        aside.panel{ order:3; max-height:50vh; overflow:auto; }
         /* keep toolbar visible while scrolling the stage */
         #stageToolbar{ position:sticky; top:0; background:var(--panel); z-index:10; padding-top:8px; }
+        /* move legal notice into settings on mobile */
+        .mobile-only{ display:block; }
+        footer{ display:none; }
       }
+      /* default hidden marker */
+      .mobile-only{ display:none; }
     </style>
   </head>
   <body>
@@ -113,6 +120,10 @@
             <button id="addBodyArea" type="button">追加本文を追加</button>
           </div>
         </div>
+        <!-- legal note for mobile: placed at bottom of settings -->
+        <div class="mobile-only" style="margin-top:12px; font-size:12px; color:var(--muted); line-height:1.6;">
+          このカードジェネレータに含まれるアップロード素材およびサンプル素材は、すべてフリー素材として提供されます。これらの素材単体に対して当サービスは著作権を主張しません。カードジェネレータで生成された合成画像の権利は利用者に帰属し、商用利用を含め自由にご利用いただけます。ただし、商標登録や著作権の取得が自動的に保証されるものではありません。
+        </div>
       </aside>
       <section class="panel stage-wrap" id="stageWrap">
         <div class="row" id="stageToolbar" style="gap:8px; margin-bottom:8px; align-items:center;">
@@ -130,6 +141,9 @@
           <div class="stage-frame" id="stageContainer"></div>
         </div>
       </section>
+      <!-- draggable split handle (mobile only) -->
+      <div id="mobileDivider" aria-hidden="true" style="display:none"></div>
+      
   </main>
   <!-- Font Manager Modal (Google Fonts URL only) -->
   <div id="fontModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:1000;">
@@ -1163,6 +1177,74 @@
           // Safari fallback
           window.addEventListener('resize', applyInitialScale);
         }
+      })();
+
+      // Mobile split view (draggable divider between stage and settings)
+      (function(){
+        const mql = window.matchMedia('(max-width: 960px)');
+        const stageWrap = document.getElementById('stageWrap');
+        const aside = document.querySelector('main > aside.panel');
+        const divider = document.getElementById('mobileDivider');
+        let ratio = 0.7; // initial stage area ratio on mobile (more space to image)
+        let dragging = false;
+        function availHeight(){
+          const header = document.querySelector('header');
+          const hH = header ? header.getBoundingClientRect().height : 0;
+          // main vertical paddings ~ 16px (safe margin 20)
+          return Math.max(200, window.innerHeight - hH - 20);
+        }
+        function applySplit(){
+          const ah = availHeight();
+          const stageH = Math.round(ah * ratio);
+          const asideH = Math.max(120, ah - stageH);
+          stageWrap.style.height = stageH + 'px';
+          aside.style.maxHeight = asideH + 'px';
+          if (document.getElementById('viewScale')?.value === 'fit') {
+            // re-fit after size change
+            try { fitToViewport(); } catch(e){}
+          }
+        }
+        function enable(){
+          divider.style.display = 'block';
+          applySplit();
+        }
+        function disable(){
+          divider.style.display = 'none';
+          stageWrap.style.height = '';
+          aside.style.maxHeight = '';
+        }
+        function onDown(e){ dragging = true; e.preventDefault(); }
+        function onMove(e){
+          if (!dragging) return;
+          const y = (e.touches? e.touches[0].clientY : e.clientY);
+          const header = document.querySelector('header');
+          const top = (header ? header.getBoundingClientRect().bottom : 0) + 10; // account padding
+          const ah = availHeight();
+          const rel = (y - top) / ah; // 0..1
+          ratio = Math.min(0.9, Math.max(0.2, rel));
+          applySplit();
+        }
+        function onUp(){ dragging = false; }
+        function attach(){
+          divider.addEventListener('pointerdown', onDown);
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+          // touch fallback
+          divider.addEventListener('touchstart', onDown, {passive:false});
+          window.addEventListener('touchmove', onMove, {passive:false});
+          window.addEventListener('touchend', onUp);
+        }
+        function detach(){
+          divider.removeEventListener('pointerdown', onDown);
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          divider.removeEventListener('touchstart', onDown);
+          window.removeEventListener('touchmove', onMove);
+          window.removeEventListener('touchend', onUp);
+        }
+        function handle(){ if (mql.matches) { enable(); attach(); } else { disable(); detach(); } }
+        handle();
+        try { mql.addEventListener('change', handle); } catch(e) { window.addEventListener('resize', handle); }
       })();
     </script>
   </body>
