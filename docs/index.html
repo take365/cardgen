@@ -10,6 +10,21 @@
     <link rel="stylesheet" href="./styles.css" />
     <!-- Konva (CDN). If offline, replace with local copy. -->
     <script src="https://unpkg.com/konva@9.3.14/konva.min.js"></script>
+    <style>
+      /* Mobile layout overrides (index.html only) */
+      @media (max-width: 960px){
+        body{ overflow:auto; }
+        main{ display:flex; flex-direction:column; gap:10px; padding:8px; overflow:visible; }
+        header, footer{ padding:10px 12px; }
+        header h1{ font-size:14px; }
+        .panel{ padding:10px; }
+        /* show stage first on mobile */
+        .stage-wrap{ order:1; }
+        aside.panel{ order:2; max-height:50vh; overflow:auto; }
+        /* keep toolbar visible while scrolling the stage */
+        #stageToolbar{ position:sticky; top:0; background:var(--panel); z-index:10; padding-top:8px; }
+      }
+    </style>
   </head>
   <body>
     <header>
@@ -1135,8 +1150,20 @@
       autoLayout();
       loadManifestAndInit();
       // Initial preview scale: 50%
-      document.getElementById('viewScale').value = '0.5';
-      setTimeout(() => applyScale(0.5), 0);
+      // Initial preview scale: mobile = fit, desktop = 50%
+      (function(){
+        const sel = document.getElementById('viewScale');
+        const mql = window.matchMedia('(max-width: 960px)');
+        function applyInitialScale(){
+          if (mql.matches){ sel.value = 'fit'; fitToViewport(); }
+          else { sel.value = '0.5'; applyScale(0.5); }
+        }
+        applyInitialScale();
+        try { mql.addEventListener('change', applyInitialScale); } catch(e) {
+          // Safari fallback
+          window.addEventListener('resize', applyInitialScale);
+        }
+      })();
     </script>
   </body>
   </html>
