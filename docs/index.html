@@ -73,6 +73,7 @@
             </div>
           </div>
         </div>
+        
         <div class="section">
           <h2>&nbsp;</h2>
           <label for="titleInput">タイトル</label>
@@ -181,8 +182,50 @@
           <button type="button" class="primary" onclick="(function(){document.getElementById('itemModal').style.display='none'})()">閉じる</button>
         </div>
       </div>
-      <div id="itemGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
-      <input id="itemUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+      <div class="row" style="gap:8px; align-items:center; margin-top:8px;">
+        <button id="itemTabLocal" class="primary" type="button">ローカル</button>
+        <button id="itemTabPixabay" type="button">Pixabay</button>
+        <span class="spacer"></span>
+        <a href="https://pixabay.com/api/docs/" target="_blank" rel="noreferrer" style="color:#5f9fff; font-size:12px;">Powered by Pixabay</a>
+        <input id="pxKeyItem" type="password" placeholder="API Key" style="width:160px" />
+      </div>
+      <div id="itemLocalTab" style="flex:1 1 auto; overflow:auto; display:block;">
+        <div id="itemGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
+        <input id="itemUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+      </div>
+      <div id="itemPixabayTab" style="flex:1 1 auto; overflow:auto; display:none; margin-top:8px;">
+        <div id="pxFormItem" class="row" style="gap:6px; flex-wrap:wrap; align-items:flex-end;">
+          <label>キーワード <input id="pxQItem" type="text" placeholder="例: potion, helmet" style="width:200px"></label>
+          <label>タイプ
+            <select id="pxTypeItem">
+              <option value="illustration" selected>イラスト</option>
+              <option value="vector">ベクター</option>
+              <option value="photo">写真</option>
+              <option value="all">すべて</option>
+            </select>
+          </label>
+          <label>向き
+            <select id="pxOriItem">
+              <option value="all" selected>すべて</option>
+              <option value="horizontal">横</option>
+              <option value="vertical">縦</option>
+            </select>
+          </label>
+          <label class="row" style="gap:6px; align-items:center;">
+            <input id="pxTransItem" type="checkbox" checked> 透過背景のみ
+          </label>
+          <label>最小W<input id="pxMinWItem" type="number" value="600" style="width:80px"></label>
+          <label>最小H<input id="pxMinHItem" type="number" value="600" style="width:80px"></label>
+          <label class="row" style="gap:6px; align-items:center;">
+            <input id="pxSafeItem" type="checkbox" checked> セーフサーチ
+          </label>
+          <button id="pxSearchItem" class="primary" type="button">検索</button>
+        </div>
+        <div id="pxGridItem" style="margin-top:8px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; align-content:start;"></div>
+        <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;">
+          <button id="pxMoreItem" type="button">もっと見る</button>
+        </div>
+      </div>
     </div>
   </div>
   <!-- Asset Picker Modal (Background/Frame/Icon) -->
@@ -195,8 +238,50 @@
           <button type="button" class="primary" onclick="(function(){document.getElementById('assetModal').style.display='none'})()">閉じる</button>
         </div>
       </div>
-      <div id="assetGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
-      <input id="assetUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+      <div class="row" style="gap:8px; align-items:center; margin-top:8px;">
+        <button id="assetTabLocal" class="primary" type="button">ローカル</button>
+        <button id="assetTabPixabay" type="button">Pixabay</button>
+        <span class="spacer"></span>
+        <a href="https://pixabay.com/api/docs/" target="_blank" rel="noreferrer" style="color:#5f9fff; font-size:12px;">Powered by Pixabay</a>
+        <input id="pxKeyAsset" type="password" placeholder="API Key" style="width:160px" />
+      </div>
+      <div id="assetLocalTab" style="flex:1 1 auto; overflow:auto; display:block;">
+        <div id="assetGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
+        <input id="assetUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+      </div>
+      <div id="assetPixabayTab" style="flex:1 1 auto; overflow:auto; display:none; margin-top:8px;">
+        <div id="pxFormAsset" class="row" style="gap:6px; flex-wrap:wrap; align-items:flex-end;">
+          <label>キーワード <input id="pxQAsset" type="text" placeholder="例: forest, castle" style="width:200px"></label>
+          <label>タイプ
+            <select id="pxTypeAsset">
+              <option value="all" selected>すべて</option>
+              <option value="photo">写真</option>
+              <option value="illustration">イラスト</option>
+              <option value="vector">ベクター</option>
+            </select>
+          </label>
+          <label>向き
+            <select id="pxOriAsset">
+              <option value="horizontal" selected>横</option>
+              <option value="vertical">縦</option>
+              <option value="all">すべて</option>
+            </select>
+          </label>
+          <label class="row" style="gap:6px; align-items:center;">
+            <input id="pxTransAsset" type="checkbox"> 透過背景のみ
+          </label>
+          <label>最小W<input id="pxMinWAsset" type="number" value="1920" style="width:80px"></label>
+          <label>最小H<input id="pxMinHAsset" type="number" value="1080" style="width:80px"></label>
+          <label class="row" style="gap:6px; align-items:center;">
+            <input id="pxSafeAsset" type="checkbox" checked> セーフサーチ
+          </label>
+          <button id="pxSearchAsset" class="primary" type="button">検索</button>
+        </div>
+        <div id="pxGridAsset" style="margin-top:8px; display:grid; grid-template-columns: repeat(auto-fill, 160px); gap:12px; align-content:start;"></div>
+        <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;">
+          <button id="pxMoreAsset" type="button">もっと見る</button>
+        </div>
+      </div>
     </div>
   </div>
     <footer>
@@ -794,6 +879,18 @@
       });
       document.getElementById('openFontMgrTitle')?.addEventListener('click', ()=> openFontManager('title'));
       document.getElementById('openFontMgrBody')?.addEventListener('click', ()=> openFontManager('body'));
+      // Pixabay key sync
+      function pxKey(){
+        const a=document.getElementById('pxKeyAsset')?.value?.trim();
+        const b=document.getElementById('pxKeyItem')?.value?.trim();
+        return a || b || sessionStorage.getItem('pixabay.key') || '';
+      }
+      function savePxKeyFromInputs(){
+        const k = pxKey(); if (k) sessionStorage.setItem('pixabay.key', k);
+      }
+      document.getElementById('pxKeyAsset')?.addEventListener('input', savePxKeyFromInputs);
+      document.getElementById('pxKeyItem')?.addEventListener('input', savePxKeyFromInputs);
+      (function(){ const k=sessionStorage.getItem('pixabay.key'); if (k){ const a=document.getElementById('pxKeyAsset'); const b=document.getElementById('pxKeyItem'); if(a) a.value=k; if(b) b.value=k; } })();
 
       // Item picker & upload
       document.getElementById('openItemPicker')?.addEventListener('click', () => openItemPicker());
@@ -803,10 +900,35 @@
       // base icon slot is 0
       document.getElementById('openIconPicker')?.addEventListener('click', () => { currentIconSlot = 0; });
       document.getElementById('openItemUpload')?.addEventListener('click', () => openItemUpload());
+      // pixabay tab buttons for asset modal
+      document.getElementById('assetTabLocal')?.addEventListener('click', ()=> setAssetTab('local'));
+      document.getElementById('assetTabPixabay')?.addEventListener('click', ()=> setAssetTab('pixabay'));
+      // Tabs init
+      function setItemTab(which){
+        const a = document.getElementById('itemLocalTab');
+        const b = document.getElementById('itemPixabayTab');
+        const ba = document.getElementById('itemTabLocal');
+        const bb = document.getElementById('itemTabPixabay');
+        if (which==='pixabay'){ a.style.display='none'; b.style.display='block'; ba.classList.remove('primary'); bb.classList.add('primary'); initPixabayItemPreset(); }
+        else { a.style.display='block'; b.style.display='none'; ba.classList.add('primary'); bb.classList.remove('primary'); }
+      }
+      function setAssetTab(which){
+        const a = document.getElementById('assetLocalTab');
+        const b = document.getElementById('assetPixabayTab');
+        const ba = document.getElementById('assetTabLocal');
+        const bb = document.getElementById('assetTabPixabay');
+        if (which==='pixabay'){ a.style.display='none'; b.style.display='block'; ba.classList.remove('primary'); bb.classList.add('primary'); initPixabayAssetPreset(); }
+        else { a.style.display='block'; b.style.display='none'; ba.classList.add('primary'); bb.classList.remove('primary'); }
+      }
+      document.getElementById('itemTabLocal')?.addEventListener('click', ()=> setItemTab('local'));
+      document.getElementById('itemTabPixabay')?.addEventListener('click', ()=> setItemTab('pixabay'));
+      document.getElementById('assetTabLocal')?.addEventListener('click', ()=> setAssetTab('local'));
+      document.getElementById('assetTabPixabay')?.addEventListener('click', ()=> setAssetTab('pixabay'));
 
       function openItemPicker(){
         const modal = document.getElementById('itemModal');
         buildItemGrid();
+        setItemTab('local');
         // enable drag & drop upload into the item grid
         try { setupDropUpload(document.getElementById('itemGrid'), ()=> 'item', async ()=>{ await loadUploads(); buildItemGrid(); }); } catch(e){}
         modal.style.display='grid';
@@ -863,12 +985,16 @@
           req.onerror = ()=> reject(req.error);
         });
       }
-      async function idbAddUpload(file, category){
+      async function idbAddUpload(file, category, meta){
         const db = await idbOpen();
         return new Promise((resolve,reject)=>{
           const tx = db.transaction('uploads','readwrite');
           const st = tx.objectStore('uploads');
           const rec = { name: file.name, type: file.type, blob: file, createdAt: Date.now(), category: category || 'item' };
+          if (meta && typeof meta === 'object') {
+            if (meta.source) rec.source = meta.source;
+            if (meta.sourceMeta) rec.sourceMeta = meta.sourceMeta;
+          }
           const r = st.add(rec);
           r.onsuccess = ()=> resolve(r.result);
           r.onerror = ()=> reject(r.error);
@@ -903,7 +1029,7 @@
         try {
           const list = await idbListUploads();
           // create object URLs for display
-          const mapRec = (rec)=> ({ id: rec.id, name: rec.name, url: URL.createObjectURL(rec.blob), type: rec.type, category: rec.category||'item' });
+          const mapRec = (rec)=> ({ id: rec.id, name: rec.name, url: URL.createObjectURL(rec.blob), type: rec.type, category: rec.category||'item', source: rec.source||'local', sourceMeta: rec.sourceMeta });
           const mapped = list.map(mapRec);
           window.UPLOAD_ITEMS = mapped.filter(r=>r.category==='item');
           window.UPLOAD_BG = mapped.filter(r=>r.category==='bg');
@@ -1012,6 +1138,106 @@
         } catch(err) { console.error('Asset upload failed', err); }
       });
 
+      // -------- Pixabay search & render --------
+      function initPixabayItemPreset(){
+        const el = (id)=> document.getElementById(id);
+        if (!el('pxTypeItem')) return;
+        el('pxTypeItem').value='illustration'; el('pxOriItem').value='all'; el('pxTransItem').checked=true; el('pxMinWItem').value='600'; el('pxMinHItem').value='600'; el('pxSafeItem').checked=true;
+      }
+      function initPixabayAssetPreset(){
+        const el = (id)=> document.getElementById(id);
+        if (!el('pxTypeAsset')) return;
+        if (currentAssetUploadType==='bg') {
+          el('pxTypeAsset').value='all';
+          el('pxOriAsset').value='vertical';
+          el('pxTransAsset').checked=false;
+          el('pxMinWAsset').value='600';
+          el('pxMinHAsset').value='900';
+          const q = document.getElementById('pxQAsset'); if (q) q.value = '背景';
+        }
+        else if (currentAssetUploadType==='icon') { el('pxTypeAsset').value='vector'; el('pxOriAsset').value='all'; el('pxTransAsset').checked=true; el('pxMinWAsset').value='256'; el('pxMinHAsset').value='256'; const q = document.getElementById('pxQAsset'); if (q && !q.value) q.value = ''; }
+        else { // frame
+          el('pxTypeAsset').value='illustration';
+          el('pxOriAsset').value='vertical';
+          el('pxTransAsset').checked=true;
+          el('pxMinWAsset').value='600';
+          el('pxMinHAsset').value='900';
+          const q = document.getElementById('pxQAsset'); if (q) q.value = 'フレーム';
+        }
+        el('pxSafeAsset').checked=true;
+      }
+      async function pixabaySearch(params){
+        const key = pxKey(); if (!key) { alert('Pixabay API Key を入力してください'); return { hits:[], totalHits:0 }; }
+        const qs = new URLSearchParams({ key,
+          q: params.q||'', image_type: params.image_type||'all', category: params.category||'', colors: params.colors||'',
+          orientation: params.orientation||'all', safesearch: params.safesearch?'true':'false', min_width: String(params.min_width||0), min_height: String(params.min_height||0),
+          page: String(params.page||1), per_page: String(params.per_page||80)
+        });
+        const url = `https://pixabay.com/api/?${qs}`;
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      }
+      function renderPxGrid(kind, hits, reset){
+        const grid = kind==='item'? document.getElementById('pxGridItem') : document.getElementById('pxGridAsset');
+        if (!grid) return; if (reset) grid.innerHTML='';
+        (hits||[]).forEach(hit=>{
+          const card = document.createElement('button'); card.type='button'; card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch'; card.style.background='transparent'; card.style.border='none'; card.style.padding='0'; card.style.cursor='pointer'; card.setAttribute('aria-label', `${hit.tags||''} by ${hit.user}`);
+          const d = document.createElement('div'); d.className='thumb item-thumb'; const img = document.createElement('img'); img.src = hit.previewURL; d.appendChild(img);
+          const cap = document.createElement('div'); cap.className='caption'; cap.innerHTML = `<a href="${hit.pageURL}" target="_blank" rel="noreferrer">${hit.user} / Pixabay</a>`; d.appendChild(cap);
+          card.appendChild(d);
+          card.addEventListener('click', async ()=>{
+            const cat = (kind==='item') ? 'item' : (currentAssetUploadType==='bg' ? 'bg' : currentAssetUploadType==='icon' ? 'icon' : 'frame');
+            await importPixabayHit(hit, cat);
+            document.getElementById(kind==='item'?'itemModal':'assetModal').style.display='none';
+          });
+          grid.appendChild(card);
+        });
+      }
+      function buildPxItemParams(reset){ if (reset) window._pxItemPage=1; const p = {
+          q: (document.getElementById('pxQItem')?.value||''), image_type: document.getElementById('pxTypeItem')?.value,
+          orientation: document.getElementById('pxOriItem')?.value, colors: document.getElementById('pxTransItem')?.checked ? 'transparent' : '',
+          safesearch: document.getElementById('pxSafeItem')?.checked, min_width: parseInt(document.getElementById('pxMinWItem')?.value||'0',10)||0,
+          min_height: parseInt(document.getElementById('pxMinHItem')?.value||'0',10)||0, page: window._pxItemPage||1, per_page: 80
+        }; return p; }
+      async function doPxSearchItem(reset){ const p=buildPxItemParams(reset); const data=await pixabaySearch(p); renderPxGrid('item', data.hits, reset); }
+      document.getElementById('pxSearchItem')?.addEventListener('click', ()=> doPxSearchItem(true));
+      document.getElementById('pxMoreItem')?.addEventListener('click', async ()=>{ window._pxItemPage=(window._pxItemPage||1)+1; await doPxSearchItem(false); });
+
+      function buildPxAssetParams(reset){ if (reset) window._pxAssetPage=1; const p = {
+          q: (document.getElementById('pxQAsset')?.value||''), image_type: document.getElementById('pxTypeAsset')?.value,
+          category: (currentAssetUploadType==='bg'?'backgrounds':''), orientation: document.getElementById('pxOriAsset')?.value,
+          colors: document.getElementById('pxTransAsset')?.checked ? 'transparent' : '', safesearch: document.getElementById('pxSafeAsset')?.checked,
+          min_width: parseInt(document.getElementById('pxMinWAsset')?.value||'0',10)||0, min_height: parseInt(document.getElementById('pxMinHAsset')?.value||'0',10)||0,
+          page: window._pxAssetPage||1, per_page: 80
+        }; return p; }
+      async function doPxSearchAsset(reset){ const p=buildPxAssetParams(reset); const data=await pixabaySearch(p); renderPxGrid('asset', data.hits, reset); }
+      document.getElementById('pxSearchAsset')?.addEventListener('click', ()=> doPxSearchAsset(true));
+      document.getElementById('pxMoreAsset')?.addEventListener('click', async ()=>{ window._pxAssetPage=(window._pxAssetPage||1)+1; await doPxSearchAsset(false); });
+
+      async function importPixabayHit(hit, category){
+        try{
+          const src = hit.largeImageURL || hit.webformatURL || hit.previewURL;
+          const imgRes = await fetch(src, { cache:'no-store' });
+          const blob = await imgRes.blob();
+          const ext = (blob.type && blob.type.includes('png')) ? 'png' : (blob.type && blob.type.includes('webp')) ? 'webp' : 'jpg';
+          const file = new File([blob], `pixabay-${hit.id}.${ext}`, { type: blob.type||'image/jpeg' });
+          const meta = { source:'pixabay', sourceMeta: { provider:'pixabay', id: hit.id, pageURL: hit.pageURL, user: hit.user, user_id: hit.user_id, userImageURL: hit.userImageURL, imageWidth: hit.imageWidth, imageHeight: hit.imageHeight, tags: hit.tags||'' } };
+          const id = await idbAddUpload(file, category, meta);
+          await loadUploads();
+          let rec = null;
+          if (category==='bg') rec = (window.UPLOAD_BG||[]).find(r=>r.id===id);
+          else if (category==='icon') rec = (window.UPLOAD_ICON||[]).find(r=>r.id===id);
+          else if (category==='frame') rec = (window.UPLOAD_FRAME||[]).find(r=>r.id===id);
+          else rec = (window.UPLOAD_ITEMS||[]).find(r=>r.id===id);
+          const url = rec?.url; if (!url) return;
+          if (category==='bg') await applyBackgroundImageURL(url);
+          else if (category==='icon') await addBadgeIconURL(url);
+          else if (category==='frame') await applyFrameImageURL(url);
+          else await addItemImageURL(url);
+        } catch(e){ console.error(e); alert('Pixabay からの取り込みに失敗しました'); }
+      }
+
       // Asset picker (bg/frame/icon)
       function openAssetPicker(type){
         const modal = document.getElementById('assetModal');
@@ -1024,6 +1250,8 @@
           const up = document.getElementById('assetUploadInput'); up.value=''; up.click();
         }, { once: true });
         buildAssetGrid(type);
+        // init tabs (local as default) and presets for pixabay
+        setAssetTab('local');
         // enable drag & drop upload into the grid for current type
         try { setupDropUpload(document.getElementById('assetGrid'), ()=> currentAssetUploadType, async ()=>{ await loadUploads(); buildAssetGrid(currentAssetUploadType); }); } catch(e){}
         modal.style.display='grid';
