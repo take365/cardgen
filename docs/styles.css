@@ -107,6 +107,10 @@ button:active { transform: translateY(1px); }
 
 footer { color: var(--muted); border-top: 1px solid var(--line); border-bottom: none; }
 
+/* Drag & Drop upload cue */
+.dropzone { position: relative; }
+.dropzone.dz-active { outline: 2px dashed var(--accent); outline-offset: 4px; background: rgba(95,159,255,0.06); }
+
 /* Mobile readability: title/body inputs as white boxes */
 @media (max-width: 960px){
   #titleInput, #bodyInput{

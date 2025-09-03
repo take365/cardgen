@@ -4,10 +4,11 @@ param(
 )
 
 function Collect($predicate) {
+  $rootPath = (Resolve-Path (Split-Path -Path $AssetsRoot -Parent)).Path + [IO.Path]::DirectorySeparatorChar
   Get-ChildItem -Recurse -File $AssetsRoot | Where-Object {
     $_.Extension -match '\.(png|jpg|jpeg|webp)$' -and (& $predicate $_)
   } | ForEach-Object {
-    $p = $_.FullName.Replace((Resolve-Path 'public').Path + [IO.Path]::DirectorySeparatorChar, '')
+    $p = $_.FullName.Replace($rootPath, '')
     $p -replace '\\','/'
   }
 }

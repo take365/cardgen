@@ -128,6 +128,12 @@
       <section class="panel stage-wrap" id="stageWrap">
         <div class="row" id="stageToolbar" style="gap:8px; margin-bottom:8px; align-items:center;">
           <button id="exportBtn" class="primary">PNG保存</button>
+          <label for="exportRes" style="color: var(--muted); font-size:12px">解像度</label>
+          <select id="exportRes">
+            <option value="0.66">軽量（約0.66x）</option>
+            <option value="1" selected>標準（1x）</option>
+            <option value="2">高解像度（2x）</option>
+          </select>
           <label for="viewScale" style="color: var(--muted); font-size:12px">表示</label>
           <select id="viewScale">
             <option value="fit">フィット</option>
@@ -540,12 +546,11 @@
           backgroundImageNode = new Konva.Image({});
           bgLayer.add(backgroundImageNode);
         }
-        // メインエリアに cover
+        // 等比 cover + 上側に少し余白（従来挙動に戻す）
         const scale = Math.max(ZONES.main.w / img.width, ZONES.main.h / img.height);
         const w = img.width * scale; const h = img.height * scale;
         const x = ZONES.main.x + (ZONES.main.w - w) / 2;
-        // stick inside main zone with top gap so it doesn't touch the top frame
-        const y = ZONES.main.y + BACKGROUND_OFFSET_Y;
+        const y = ZONES.main.y + BACKGROUND_OFFSET_Y; // 上にオフセット
         backgroundImageNode.image(img);
         backgroundImageNode.position({ x, y });
         backgroundImageNode.size({ width: w, height: h });
@@ -766,8 +771,10 @@
       // Buttons
       const alBtn = document.getElementById('autoLayoutBtn');
       if (alBtn) alBtn.addEventListener('click', autoLayout);
+      const exportResSel = document.getElementById('exportRes');
       document.getElementById('exportBtn').addEventListener('click', () => {
-        const uri = stage.toDataURL({ mimeType: 'image/png', pixelRatio: 2 });
+        const pr = Math.max(0.5, parseFloat(exportResSel?.value || '1') || 1);
+        const uri = stage.toDataURL({ mimeType: 'image/png', pixelRatio: pr });
         const a = document.createElement('a');
         a.href = uri;
         a.download = 'card.png';
@@ -800,6 +807,8 @@
       function openItemPicker(){
         const modal = document.getElementById('itemModal');
         buildItemGrid();
+        // enable drag & drop upload into the item grid
+        try { setupDropUpload(document.getElementById('itemGrid'), ()=> 'item', async ()=>{ await loadUploads(); buildItemGrid(); }); } catch(e){}
         modal.style.display='grid';
       }
       function closeItemPicker(){ document.getElementById('itemModal').style.display='none'; }
@@ -807,6 +816,7 @@
         const grid = document.getElementById('itemGrid');
         if (!grid) return;
         grid.innerHTML='';
+        grid.classList.add('dropzone');
         // Uploaded (session/IndexedDB)
         (window.UPLOAD_ITEMS || []).forEach(u => {
           const card = document.createElement('div'); card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch';
@@ -1014,12 +1024,15 @@
           const up = document.getElementById('assetUploadInput'); up.value=''; up.click();
         }, { once: true });
         buildAssetGrid(type);
+        // enable drag & drop upload into the grid for current type
+        try { setupDropUpload(document.getElementById('assetGrid'), ()=> currentAssetUploadType, async ()=>{ await loadUploads(); buildAssetGrid(currentAssetUploadType); }); } catch(e){}
         modal.style.display='grid';
       }
       function buildAssetGrid(type){
         const grid = document.getElementById('assetGrid');
         if (!grid) return;
         grid.innerHTML='';
+        grid.classList.add('dropzone');
         let manifest = [], uploaded = [];
         if (type==='bg') { manifest = (window.ASSET_BG_LIST||[]); uploaded = (window.UPLOAD_BG||[]); }
         else if (type==='frame') { manifest = (window.ASSET_FRAME_LIST||[]); uploaded = (window.UPLOAD_FRAME||[]); }
@@ -1055,6 +1068,27 @@
           });
           grid.appendChild(d);
         });
+      }
+
+      // Generic drag & drop uploader for grids (items/assets)
+      function setupDropUpload(target, categoryProvider, onDone){
+        if (!target) return;
+        if (target.dataset.dropBound === '1') return; // avoid double-binding
+        target.dataset.dropBound = '1';
+        const enter = (e)=>{ e.preventDefault(); e.stopPropagation(); target.classList.add('dz-active'); };
+        const over  = (e)=>{ e.preventDefault(); e.stopPropagation(); target.classList.add('dz-active'); };
+        const leave = (e)=>{ e.preventDefault(); e.stopPropagation(); target.classList.remove('dz-active'); };
+        const drop  = async (e)=>{
+          e.preventDefault(); e.stopPropagation(); target.classList.remove('dz-active');
+          const files = Array.from(e.dataTransfer?.files || []).filter(f=>/\.(png|jpe?g|webp)$/i.test(f.name));
+          if (!files.length) return;
+          const cat = typeof categoryProvider==='function' ? categoryProvider() : 'item';
+          for (const f of files){ try { await idbAddUpload(f, cat); } catch(err){ console.warn('drop add failed', err); } }
+          try { await onDone?.(); } catch(err) { console.warn('drop refresh failed', err); }
+        };
+        ['dragenter','dragover'].forEach(ev=> target.addEventListener(ev, enter));
+        ['dragleave','dragend'].forEach(ev=> target.addEventListener(ev, leave));
+        target.addEventListener('drop', drop);
       }
 
       // (ステータスは廃止)
