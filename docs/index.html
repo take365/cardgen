@@ -109,7 +109,7 @@
               <button id="openFontMgrBody" type="button">＋追加…</button>
             </div>
             <div class="row" style="gap:8px; flex-wrap: wrap; margin-top:6px">
-              <label>色 <input id="bodyColor" type="color" value="#e6edf3" /></label>
+              <label>色 <input id="bodyColor" type="color" value="#ffffff" /></label>
               <label>サイズ(px) <input id="bodySize" type="number" value="24" style="width:72px" /></label>
               <label>フォント <input id="bodyFont" type="text" value="Noto Sans JP, system-ui, sans-serif" style="width:220px" /></label>
             </div>
@@ -154,7 +154,7 @@
   </main>
   <!-- Font Manager Modal (Google Fonts URL only) -->
   <div id="fontModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:1000;">
-    <div style="background:#11141b; border:1px solid #2a2f3a; border-radius:8px; padding:16px; width: 560px; max-width: 94vw; color:#e6edf3;">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; width: 560px; max-width: 94vw; color:var(--text);">
       <h3 style="margin:0 0 10px; font-size:16px;">フォント管理（Google Fonts）</h3>
       <ol style="margin:0 0 10px 18px; padding:0; color:#9aa4b2; font-size:12px; line-height:1.6;">
         <li><a href="https://fonts.google.com/" target="_blank" rel="noreferrer" style="color:#5f9fff;">fonts.google.com</a> を開き、使いたいフォントを選ぶ</li>
@@ -174,7 +174,7 @@
   </div>
   <!-- Item Picker Modal -->
   <div id="itemModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:999;">
-    <div style="background:#11141b; border:1px solid #2a2f3a; border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:#e6edf3; display:flex; flex-direction:column;">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:var(--text); display:flex; flex-direction:column;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <h3 style="margin:0; font-size:16px;">アイテムを選択</h3>
         <div class="row" style="gap:8px; align-items:center;">
@@ -194,8 +194,8 @@
         <input id="itemUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
       </div>
       <div id="itemPixabayTab" style="flex:1 1 auto; overflow:auto; display:none; margin-top:8px;">
-        <div id="pxFormItem" class="row" style="gap:6px; flex-wrap:wrap; align-items:flex-end;">
-          <label>キーワード <input id="pxQItem" type="text" placeholder="例: potion, helmet" style="width:200px"></label>
+          <div id="pxFormItem" class="row" style="gap:6px; flex-wrap:wrap; align-items:flex-end;">
+            <label>キーワード <input id="pxQItem" type="text" placeholder="例: potion, helmet" style="width:200px"></label>
           <label>タイプ
             <select id="pxTypeItem">
               <option value="illustration" selected>イラスト</option>
@@ -230,7 +230,7 @@
   </div>
   <!-- Asset Picker Modal (Background/Frame/Icon) -->
   <div id="assetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:999;">
-    <div style="background:#11141b; border:1px solid #2a2f3a; border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:#e6edf3; display:flex; flex-direction:column;">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:var(--text); display:flex; flex-direction:column;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <h3 id="assetModalTitle" style="margin:0; font-size:16px;">素材を選択</h3>
         <div class="row" style="gap:8px; align-items:center;">
@@ -285,7 +285,7 @@
     </div>
   </div>
     <footer>
-      このカードジェネレータに含まれるアップロード素材およびサンプル素材は、すべてフリー素材として提供されます。これらの素材単体に対して当サービスは著作権を主張しません。カードジェネレータで生成された合成画像の権利は利用者に帰属し、商用利用を含め自由にご利用いただけます。ただし、商標登録や著作権の取得が自動的に保証されるものではありません。
+      本「トレーディングカードクラフター」に含まれるアップロード素材およびサンプル素材は、すべてフリー素材として提供されます。これらの素材単体に対して当サービスは著作権を主張しません。「トレーディングカードクラフター」で生成された合成画像の権利は利用者に帰属し、商用利用を含め自由にご利用いただけます。ただし、商標登録や著作権の取得が自動的に保証されるものではありません。
     </footer>
 
     <script>
@@ -344,11 +344,11 @@
       stage.add(bgLayer, frameLayer, artLayer, iconsLayer, textLayer, guideLayer);
 
       // Background rect placeholder (resized by autoLayout or selection)
-      const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, fill: '#1a202c' });
+      const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, fill: '#f3f4f6' });
       bgLayer.add(backgroundRect);
 
       // Frame placeholder
-      const frameRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, stroke: '#444b57', strokeWidth: 8, cornerRadius: 24 });
+      const frameRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, stroke: '#cbd5e1', strokeWidth: 8, cornerRadius: 24 });
       frameLayer.add(frameRect);
       let backgroundImageNode = null;
       let frameImageNode = null;
@@ -381,7 +381,7 @@
         fontFamily: 'Noto Sans JP, system-ui, sans-serif',
         fontSize: 24,
         lineHeight: 1.25,
-        fill: '#e6edf3',
+        fill: '#ffffff',
         align: 'left',
         draggable: true,
       });
@@ -392,7 +392,7 @@
         fontFamily: 'Noto Sans JP, system-ui, sans-serif',
         fontSize: 24,
         lineHeight: 1.25,
-        fill: '#e6edf3',
+        fill: '#ffffff',
         align: 'left',
         draggable: true,
         visible: true,
