@@ -1,54 +1,54 @@
-﻿{
-    "backgrounds":  [
-                        "assets/backgrounds/green.png",
-                        "assets/backgrounds/red.png",
-                        "assets/backgrounds/SR.png",
-                        "assets/backgrounds/SSR.png",
-                        "assets/backgrounds/オフィス.png",
-                        "assets/backgrounds/岩山.png",
-                        "assets/backgrounds/森.png",
-                        "assets/backgrounds/水.png",
-                        "assets/backgrounds/火.png",
-                        "assets/backgrounds/砂漠.png",
-                        "assets/backgrounds/街.png"
-                    ],
-    "frames":  [
-                   "assets/frames/frame1.png",
-                   "assets/frames/frame2.png",
-                   "assets/frames/frame3.png",
-                   "assets/frames/frame4.png",
-                   "assets/frames/frame6.png",
-                   "assets/frames/frame7.png",
-                   "assets/frames/frame8.png"
-               ],
-    "icons":  [
-                  "assets/icons/fire.png",
-                  "assets/icons/moon.png",
-                  "assets/icons/passive.png",
-                  "assets/icons/sun.png",
-                  "assets/icons/うちわ.png",
-                  "assets/icons/十手.png",
-                  "assets/icons/土.png",
-                  "assets/icons/小判.png",
-                  "assets/icons/扇子.png",
-                  "assets/icons/水.png",
-                  "assets/icons/風.png"
-              ],
-    "items":  [
-                  "assets/items/man.png",
-                  "assets/items/shield.png",
-                  "assets/items/soad.png",
-                  "assets/items/wand.png",
-                  "assets/items/Wolf.png",
-                  "assets/items/お願い.png",
-                  "assets/items/ゲート.png",
-                  "assets/items/ワイン.png",
-                  "assets/items/容疑者.png",
-                  "assets/items/探偵.png",
-                  "assets/items/甲冑.png",
-                  "assets/items/米屋.png",
-                  "assets/items/聖水.png",
-                  "assets/items/靴.png",
-                  "assets/items/靴２.png"
-              ]
+{
+  "backgrounds": [
+    "assets/backgrounds/green.png",
+    "assets/backgrounds/red.png",
+    "assets/backgrounds/SR.png",
+    "assets/backgrounds/SSR.png",
+    "assets/backgrounds/オフィス.png",
+    "assets/backgrounds/岩山.png",
+    "assets/backgrounds/森.png",
+    "assets/backgrounds/水.png",
+    "assets/backgrounds/火.png",
+    "assets/backgrounds/砂漠.png",
+    "assets/backgrounds/街.png"
+  ],
+  "frames": [
+    "assets/frames/frame1.png",
+    "assets/frames/frame2.png",
+    "assets/frames/frame3.png",
+    "assets/frames/frame4.png",
+    "assets/frames/frame6.png",
+    "assets/frames/frame7.png",
+    "assets/frames/frame8.png"
+  ],
+  "icons": [
+    "assets/icons/fire.png",
+    "assets/icons/moon.png",
+    "assets/icons/passive.png",
+    "assets/icons/sun.png",
+    "assets/icons/うちわ.png",
+    "assets/icons/十手.png",
+    "assets/icons/土.png",
+    "assets/icons/小判.png",
+    "assets/icons/扇子.png",
+    "assets/icons/水.png",
+    "assets/icons/風.png"
+  ],
+  "items": [
+    "assets/items/man.png",
+    "assets/items/shield.png",
+    "assets/items/soad.png",
+    "assets/items/wand.png",
+    "assets/items/Wolf.png",
+    "assets/items/お願い.png",
+    "assets/items/ゲート.png",
+    "assets/items/ワイン.png",
+    "assets/items/容疑者.png",
+    "assets/items/探偵.png",
+    "assets/items/甲冑.png",
+    "assets/items/米屋.png",
+    "assets/items/聖水.png",
+    "assets/items/靴.png",
+    "assets/items/靴２.png"
+  ]
 }
