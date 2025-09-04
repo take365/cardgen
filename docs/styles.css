@@ -25,6 +25,7 @@ header, footer { padding: 12px 16px; border-bottom: 1px solid var(--line); }
 header { display: flex; align-items: center; gap: 12px; }
 header h1 { margin: 0; font-size: 16px; font-weight: 600; }
 header .spacer { flex: 1; }
+header .logo { height: 36px; width: auto; display: inline-block; }
 
 main { display: grid; grid-template-columns: 320px 1fr; gap: 12px; padding: 12px; flex: 1; min-height: 0; overflow: hidden; }
 

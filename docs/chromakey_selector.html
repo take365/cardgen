@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>クロマキー透過ツール</title>
+  <style>
+    body { background: #222; color: #eee; font-family: sans-serif; text-align: center; margin: 0; padding: 0; }
+    canvas { border: 1px solid #555; margin: 10px; cursor: crosshair; }
+    .controls { margin: 10px; display: flex; justify-content: center; gap: 10px; }
+    .controls label { display: flex; align-items: center; gap: 4px; }
+  </style>
+</head>
+<body>
+  <h2>クロマキー透過ツール</h2>
+  <input type="file" id="fileInput" accept="image/*">
+  <div class="controls">
+    <label>しきい値 <input type="range" id="threshold" min="0" max="255" value="40"></label>
+    <label>フェザー <input type="range" id="feather" min="0" max="20" value="2"></label>
+    <button id="magicWand">マジックワンド選択</button>
+    <button id="reset">リセット</button>
+    <button id="download">PNG保存</button>
+  </div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const thresholdInput = document.getElementById('threshold');
+    const featherInput = document.getElementById('feather');
+    const magicWandBtn = document.getElementById('magicWand');
+    const resetBtn = document.getElementById('reset');
+    const downloadBtn = document.getElementById('download');
+
+    let img = null;
+    let imageData = null;
+    let baseData = null;
+    let magicWandMode = false;
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        img = new Image();
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          baseData = new Uint8ClampedArray(imageData.data);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    canvas.addEventListener('click', e => {
+      if (!img || !imageData) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) * canvas.width / rect.width);
+      const y = Math.floor((e.clientY - rect.top) * canvas.height / rect.height);
+      const idx = (y * canvas.width + x) * 4;
+      const r = imageData.data[idx];
+      const g = imageData.data[idx + 1];
+      const b = imageData.data[idx + 2];
+
+      applyChromaKey(r, g, b);
+    });
+
+    function applyChromaKey(r, g, b) {
+      const threshold = parseInt(thresholdInput.value);
+      const feather = parseInt(featherInput.value);
+      const data = new Uint8ClampedArray(baseData);
+      for (let i = 0; i < data.length; i += 4) {
+        const dr = data[i] - r;
+        const dg = data[i+1] - g;
+        const db = data[i+2] - b;
+        const dist = Math.sqrt(dr*dr + dg*dg + db*db);
+        if (dist < threshold) {
+          let alpha = 0;
+          if (feather > 0) {
+            alpha = Math.min(255, Math.floor((dist/threshold) * 255));
+          }
+          data[i+3] = alpha;
+        }
+      }
+      ctx.putImageData(new ImageData(data, canvas.width, canvas.height), 0, 0);
+    }
+
+    magicWandBtn.addEventListener('click', () => {
+      magicWandMode = !magicWandMode;
+      magicWandBtn.style.background = magicWandMode ? '#555' : '';
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (!img) return;
+      ctx.putImageData(new ImageData(baseData, canvas.width, canvas.height), 0, 0);
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'output.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  </script>
+</body>
+</html>

@@ -4,7 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>トレーディングカードクラフター</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232959b3'/%3E%3Ctext x='8' y='11' font-size='9' text-anchor='middle' fill='white'%3EC%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" type="image/png" sizes="512x512" href="./logo.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="./styles.css" />
@@ -35,6 +37,7 @@
   </head>
   <body>
     <header>
+      <img class="logo" src="./logo.png" alt="" />
       <h1>トレーディングカードクラフター</h1>
       <span class="spacer"></span>
       <a href="gen.html" style="color:#5f9fff; text-decoration:none; font-weight:600">AI画像生成へ</a>
@@ -344,11 +347,11 @@
       stage.add(bgLayer, frameLayer, artLayer, iconsLayer, textLayer, guideLayer);
 
       // Background rect placeholder (resized by autoLayout or selection)
-      const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, fill: '#f3f4f6' });
+      const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, fillEnabled: false, listening: false });
       bgLayer.add(backgroundRect);
 
-      // Frame placeholder
-      const frameRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, stroke: '#cbd5e1', strokeWidth: 8, cornerRadius: 24 });
+      // Frame placeholder (no outer stroke to keep export transparent)
+      const frameRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, strokeEnabled: false, fillEnabled: false, listening: false });
       frameLayer.add(frameRect);
       let backgroundImageNode = null;
       let frameImageNode = null;
@@ -609,6 +612,7 @@
       // Apply background/frame/icon
       function applyBackground(bg) {
         if (bg.type === 'color') {
+          backgroundRect.fillEnabled(true);
           backgroundRect.fill(bg.value);
           bgLayer.draw();
         }
@@ -631,6 +635,8 @@
           backgroundImageNode = new Konva.Image({});
           bgLayer.add(backgroundImageNode);
         }
+        // ensure solid color rect does not affect image/transparent export
+        backgroundRect.fillEnabled(false);
         // 等比 cover + 上側に少し余白（従来挙動に戻す）
         const scale = Math.max(ZONES.main.w / img.width, ZONES.main.h / img.height);
         const w = img.width * scale; const h = img.height * scale;
