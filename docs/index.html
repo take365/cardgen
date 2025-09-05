@@ -1,1522 +1,167 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>トレーディングカードクラフター</title>
-    <link rel="icon" type="image/png" sizes="512x512" href="./logo.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="./logo.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="./logo.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="./styles.css" />
-    <!-- Konva (CDN). If offline, replace with local copy. -->
-    <script src="https://unpkg.com/konva@9.3.14/konva.min.js"></script>
-    <style>
-      /* Mobile layout overrides (index.html only) */
-      @media (max-width: 960px){
-        body{ overflow:auto; }
-        main{ display:flex; flex-direction:column; gap:10px; padding:8px; overflow:visible; }
-        header, footer{ padding:10px 12px; }
-        header h1{ font-size:14px; }
-        .panel{ padding:10px; }
-        /* show stage first on mobile */
-        .stage-wrap{ order:1; }
-        #mobileDivider{ order:2; display:block; height:10px; cursor:row-resize; position:relative; }
-        #mobileDivider::before{ content:''; position:absolute; left:40%; right:40%; top:3px; height:4px; border-radius:3px; background:#2a2f3a; }
-        aside.panel{ order:3; max-height:50vh; overflow:auto; }
-        /* keep toolbar visible while scrolling the stage */
-        #stageToolbar{ position:sticky; top:0; background:var(--panel); z-index:10; padding-top:8px; }
-        /* move legal notice into settings on mobile */
-        .mobile-only{ display:block; }
-        footer{ display:none; }
-      }
-      /* default hidden marker */
-      .mobile-only{ display:none; }
-    </style>
-  </head>
-  <body>
-    <header>
-      <img class="logo" src="./logo.png" alt="" />
-      <h1>トレーディングカードクラフター</h1>
-      <span class="spacer"></span>
-      <a href="gen.html" style="color:#5f9fff; text-decoration:none; font-weight:600">AI画像生成へ</a>
-    </header>
-    <main>
-      <aside class="panel">
-        <div class="section">
-          <h2>&nbsp;</h2>
-          <div class="row" style="gap:8px; flex-wrap:wrap;">
-            <button id="openBgPicker" type="button" class="primary">背景を選択</button>
-          </div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>トレーディングカードクラフター｜誰でも作れるカード生成ツール</title>
+
+  <!-- OGP（必要に応じて差し替え） -->
+  <meta property="og:title" content="トレーディングカードクラフター" />
+  <meta property="og:description" content="ファンタジー・ビジネス・ミステリー…好きなテーマで誰でもカード作成！完全無料。" />
+  <meta property="og:type" content="website" />
+  <!-- ★ここ差し替え：絶対URL推奨 -->
+  <meta property="og:image" content="https://take365.github.io/cardgen/docs/samples/ogp.png" />
+  <meta property="og:url" content="https://take365.github.io/cardgen/" />
+
+  <!-- favicon -->
+  <link rel="icon" type="image/png" sizes="512x512" href="./logo.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./logo.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./logo.png" />
+
+  <style>
+    :root{
+      --bg:#0b1220; --fg:#f5f7fa; --muted:#b8c0d0; --brand:#f0c15a;
+      --card:#121a2c; --line:#1f2a44; --accent:#2a3b63;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--fg);line-height:1.65}
+    a{color:var(--brand);text-decoration:none} a:hover{text-decoration:underline}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    .hero{display:grid;gap:20px;align-items:center;grid-template-columns:1.2fr 1fr;padding:40px 0;border-bottom:1px solid var(--line)}
+    .hero h1{font-size:clamp(28px,4vw,44px);margin:0 0 12px}
+    .hero p{color:var(--muted);margin:0 0 20px}
+    .btn{display:inline-block;background:var(--brand);color:#222;padding:12px 18px;border-radius:10px;font-weight:700}
+    .frame{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+    .grid3{display:grid;gap:16px;grid-template-columns:repeat(3,1fr)}
+    .grid2{display:grid;gap:16px;grid-template-columns:repeat(2,1fr)}
+    .caption{font-size:13px;color:var(--muted);margin-top:8px}
+    img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#0f1627}
+    h2{margin:36px 0 12px;font-size:24px}
+    ol.steps{margin:0;padding-left:20px}
+    .note{font-size:14px;color:var(--muted)}
+    .kbd{padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:#0d1630}
+    .footer{margin:40px 0 10px;padding-top:20px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+    @media (max-width:900px){.hero{grid-template-columns:1fr}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="wrap hero">
+    <div>
+      <h1>あなたの物語を1枚のカードに。</h1>
+      <p>ファンタジー／ビジネス／ミステリー……好きなテーマで誰でもカンタンにカード作成。<br>
+      画像を選んで、テキストを入れて、保存するだけ。<strong>完全無料</strong>です。</p>
+      <p>
+        <a class="btn" href="editor.html">今すぐカードを作る</a>
+        &nbsp; <a href="https://github.com/take365/cardgen" target="_blank" rel="noopener">GitHub（ソース公開）</a>
+      </p>
+      <p class="note">改善要望・不具合は GitHub の <a href="https://github.com/take365/cardgen/issues" target="_blank" rel="noopener">Issues</a> へ。<br>
+      すべてに対応はできません。高度な加工は各自で AI や <span class="kbd">Canva</span> 等をご利用ください。</p>
+    </div>
+    <div class="frame">
+      <!-- ★ここ差し替え：メインUIのスクショ -->
+      <img src="samples/main.png" alt="メイン画面（プレビュー／保存UI）">
+      <div class="caption">メイン画面：プレビューしながらタイトル・本文・アイコンを編集 → PNG保存</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="start">
+      <h2>はじめに（メインの画面）</h2>
+      <div class="grid2">
+        <div class="frame">
+          <ol class="steps">
+            <li>背景・枠・アイテム・アイコンを選ぶ</li>
+            <li>タイトル／本文を入力（プレビューを見ながら微調整）</li>
+            <li>サイズを選んで <span class="kbd">PNG保存</span></li>
+          </ol>
+          <p class="note">※ 複数アイコン／追加テキストも追加可能。カードごとの雰囲気に合わせて調整してください。</p>
         </div>
-        <div class="section">
-          <h2>&nbsp;</h2>
-          <div class="row" style="gap:8px; flex-wrap:wrap;">
-            <button id="openFramePicker" type="button" class="primary">枠を選択</button>
-          </div>
+        <div class="frame">
+          <!-- ★ここ差し替え：生成カードの例 -->
+          <img src="samples/ogp.png" alt="生成カードのサンプル">
+          <div class="caption">作例（ファンタジー／ビジネス／ミステリー）</div>
         </div>
-        <div class="section">
-          <h2>&nbsp;</h2>
-          <div class="row" style="gap:8px; flex-wrap:wrap;">
-            <button id="openItemPicker" type="button" class="primary">アイテムを選択</button>
-            <div class="row" style="gap:4px;">
-              <button id="itemScaleMinus" type="button" title="アイテム縮小" style="width:32px;padding:6px 0">－</button>
-              <button id="itemScalePlus" type="button" title="アイテム拡大" style="width:32px;padding:6px 0">＋</button>
-            </div>
-          </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>素材の選択（ローカル or Pixabay）</h2>
+      <div class="grid2">
+        <div class="frame">
+          <!-- ★ここ差し替え：素材選択ダイアログのスクショ -->
+          <img src="samples/select.png" alt="素材選択ダイアログ">
+          <div class="caption">素材選択ダイアログ：ローカル画像 or Pixabay API 経由で検索</div>
         </div>
-        <div class="section">
-          <h2>&nbsp;</h2>
-          <div class="row" style="gap:8px; flex-wrap:wrap;">
-            <button id="openIconPicker" type="button" class="primary">アイコンを選択</button>
-            <div class="row" style="gap:4px;">
-              <button id="iconScaleMinus" type="button" title="アイコン縮小" style="width:32px;padding:6px 0">－</button>
-              <button id="iconScalePlus" type="button" title="アイコン拡大" style="width:32px;padding:6px 0">＋</button>
-            </div>
-          </div>
+        <div class="frame">
+          <h3>Pixabay の使い方（APIキー）</h3>
+          <ol class="steps">
+            <li>Pixabay にログイン</li>
+            <li><a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener">https://pixabay.com/api/docs/</a> を開く</li>
+            <li>画面上部の <strong>API Key</strong> をコピー</li>
+            <li>本ツールの「Pixabay」タブの入力欄に貼り付け → 検索して選択</li>
+          </ol>
+          <p class="note">Pixabay 素材は商用利用可能（要規約確認）。各画像のライセンス条件は Pixabay 側の規約に従います。</p>
         </div>
-        
-        <div class="section">
-          <h2>&nbsp;</h2>
-          <label for="titleInput">タイトル</label>
-          <input id="titleInput" type="text" placeholder="例: Flame Dagger" />
-          <details style="margin:6px 0 10px;">
-            <summary style="cursor:pointer; color: var(--muted);">詳細</summary>
-            <div class="row" style="gap:8px; align-items:center; margin:8px 0 8px; flex-wrap: wrap;">
-              <label>タイトル フォント
-                <select id="titleFontSelect" style="min-width:220px"></select>
-              </label>
-              <button id="openFontMgrTitle" type="button">＋追加…</button>
-            </div>
-            <div class="row" style="gap:8px; flex-wrap: wrap; margin-top:6px">
-              <label>色 <input id="titleColor" type="color" value="#ffffff" /></label>
-              <label>サイズ(px) <input id="titleSize" type="number" value="32" style="width:72px" /></label>
-              <label>フォント <input id="titleFont" type="text" value="Noto Sans JP, system-ui, sans-serif" style="width:220px" /></label>
-              <label>太さ
-                <select id="titleWeight">
-                  <option value="700" selected>Bold</option>
-                  <option value="400">Normal</option>
-                </select>
-              </label>
-            </div>
-          </details>
-          <label for="bodyInput">本文</label>
-          <textarea id="bodyInput" placeholder="効果説明を入力"></textarea>
-          <details style="margin:6px 0 10px;">
-            <summary style="cursor:pointer; color: var(--muted);">詳細</summary>
-            <div class="row" style="gap:8px; align-items:center; margin:8px 0 8px; flex-wrap: wrap;">
-              <label>本文 フォント
-                <select id="bodyFontSelect" style="min-width:220px"></select>
-              </label>
-              <button id="openFontMgrBody" type="button">＋追加…</button>
-            </div>
-            <div class="row" style="gap:8px; flex-wrap: wrap; margin-top:6px">
-              <label>色 <input id="bodyColor" type="color" value="#ffffff" /></label>
-              <label>サイズ(px) <input id="bodySize" type="number" value="24" style="width:72px" /></label>
-              <label>フォント <input id="bodyFont" type="text" value="Noto Sans JP, system-ui, sans-serif" style="width:220px" /></label>
-            </div>
-          </details>
+      </div>
+    </section>
+
+    <section>
+      <h2>主な特長</h2>
+      <div class="grid3">
+        <div class="frame"><strong>テンプレ＋自由編集</strong><br>枠・背景・アイコンを組み合わせ、テキストも即時プレビュー。</div>
+        <div class="frame"><strong>完全無料</strong><br>インストール不要。ブラウザだけで完結。</div>
+        <div class="frame"><strong>画像の持ち込みOK</strong><br>ローカル素材もPixabay検索素材も利用可能。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>サンプルギャラリー</h2>
+      <div class="grid3">
+        <div class="frame">
+          <!-- ★ここ差し替え -->
+          <img src="samples/card (53).png" alt="サンプル：ファンタジー">
+          <img src="samples/card (52).png" alt="サンプル：ファンタジー">
+          <div class="caption">ファンタジー（例：村人・狼・武器カード）</div>
         </div>
-        <div class="section" id="extraAreas">
-          <div class="row" style="gap:8px; flex-wrap:wrap;">
-            <button id="addIconArea" type="button" class="primary">追加アイコンを追加</button>
-            <button id="addBodyArea" type="button" class="primary">追加本文を追加</button>
-          </div>
+        <div class="frame">
+          <!-- ★ここ差し替え -->
+          <img src="samples/card (46).png" alt="サンプル：ビジネス">
+          <img src="samples/card (45).png" alt="サンプル：ビジネス">
+          <div class="caption">ビジネス（例：今週のお願い／社内イベント）</div>
         </div>
-        <!-- legal note for mobile: placed at bottom of settings -->
-        <div class="mobile-only" style="margin-top:12px; font-size:12px; color:var(--muted); line-height:1.6;">
-          サンプル素材は、すべてフリー素材として提供されます。これらの素材単体に対して当サービスは著作権を主張しません。生成された合成画像の権利は利用者に帰属し、商用利用を含め自由にご利用いただけます。ただし、商標登録や著作権の取得が自動的に保証されるものではありません。
+        <div class="frame">
+          <!-- ★ここ差し替え -->
+          <img src="samples/card (48).png" alt="サンプル：ミステリー">
+          <img src="samples/card (50).png" alt="サンプル：ミステリー">
+          <div class="caption">ミステリー（例：容疑者／証拠品／探偵）</div>
         </div>
-      </aside>
-      <section class="panel stage-wrap" id="stageWrap">
-        <div class="row" id="stageToolbar" style="gap:8px; margin-bottom:8px; align-items:center;">
-          <button id="exportBtn" class="primary">PNG保存</button>
-          <label for="exportRes" style="color: var(--muted); font-size:12px">解像度</label>
-          <select id="exportRes">
-            <option value="0.66">軽量（約0.66x）</option>
-            <option value="1" selected>標準（1x）</option>
-            <option value="2">高解像度（2x）</option>
-          </select>
-          <label for="viewScale" style="color: var(--muted); font-size:12px">表示</label>
-          <select id="viewScale">
-            <option value="fit">フィット</option>
-            <option value="1">100%</option>
-            <option value="0.75">75%</option>
-            <option value="0.66">66%</option>
-            <option value="0.5">50%</option>
-          </select>
-        </div>
-        <div class="stage-zoom" id="stageZoom">
-          <div class="stage-frame" id="stageContainer"></div>
-        </div>
-      </section>
-      <!-- draggable split handle (mobile only) -->
-      <div id="mobileDivider" aria-hidden="true" style="display:none"></div>
-      
+      </div>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <div class="frame">
+        <p><strong>Q. 商用利用はできますか？</strong><br>
+          A. 生成された画像自体は本ツールとしては制限しませんが、<u>使用する素材のライセンス</u>に従ってください（Pixabay 等）。初期提供のサンプル素材はフリー素材としてご自由にご利用できます。</p>
+        <p><strong>Q. 要望はどこに出せばいい？</strong><br>
+          A. <a href="https://github.com/take365/cardgen/issues" target="_blank" rel="noopener">GitHub Issues</a> へどうぞ。全ての要望に対応できるわけではありません。複雑なデザインは各自で AI や Canva 等をご利用ください。</p>
+        <p class="note">ソースコードは <a href="https://github.com/take365/cardgen" target="_blank" rel="noopener">GitHub: take365/cardgen</a> で公開中。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>今すぐはじめる</h2>
+      <div class="frame">
+        <p>下記ボタンからエディタを開き、テンプレを選んで画像とテキストを入れれば完成です。</p>
+        <p><a class="btn" href="editor.html">カードエディタを開く</a></p>
+      </div>
+    </section>
+
+    <div class="footer">
+      © Trading Card Crafter — 完全無料。/ 連絡先・運営情報は GitHub リポジトリをご確認ください。
+    </div>
+<img src="https://hits.sh/your-domain.com.svg?style=flat-square&label=views" 
+     alt="views" style="height:40px; width:100px; vertical-align:middle;">
   </main>
-  <!-- Font Manager Modal (Google Fonts URL only) -->
-  <div id="fontModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:1000;">
-    <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; width: 560px; max-width: 94vw; color:var(--text);">
-      <h3 style="margin:0 0 10px; font-size:16px;">フォント管理（Google Fonts）</h3>
-      <ol style="margin:0 0 10px 18px; padding:0; color:#9aa4b2; font-size:12px; line-height:1.6;">
-        <li><a href="https://fonts.google.com/" target="_blank" rel="noreferrer" style="color:#5f9fff;">fonts.google.com</a> を開き、使いたいフォントを選ぶ</li>
-        <li>右側の Embed/Use on the web で <code>link</code> の CSS URL（<code>https://fonts.googleapis.com/css2?family=...&amp;display=swap</code>）をコピー</li>
-        <li>下の欄に貼り付けて「読み込んで追加」を押す（単一ファミリー推奨）</li>
-      </ol>
-      <div style="display:grid; gap:8px; margin-top:6px;">
-        <label>Google Fonts の CSS URL
-          <input id="fmUrl" type="text" placeholder="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" style="width:100%" />
-        </label>
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-        <button type="button" onclick="closeFontManager()">閉じる</button>
-        <button type="button" class="primary" onclick="addFontFromModal()">読み込んで追加</button>
-      </div>
-    </div>
-  </div>
-  <!-- Item Picker Modal -->
-  <div id="itemModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:999;">
-    <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:var(--text); display:flex; flex-direction:column;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <h3 style="margin:0; font-size:16px;">アイテムを選択</h3>
-        <div class="row" style="gap:8px; align-items:center;">
-          <button id="openItemUpload" type="button" class="primary">画像を取り込む（このブラウザに保存）</button>
-          <button type="button" class="primary" onclick="(function(){document.getElementById('itemModal').style.display='none'})()">閉じる</button>
-        </div>
-      </div>
-      <div class="row" style="gap:8px; align-items:center; margin-top:8px;">
-        <button id="itemTabLocal" class="primary" type="button">ローカル</button>
-        <button id="itemTabPixabay" type="button">Pixabay</button>
-        <span class="spacer"></span>
-        <a href="https://pixabay.com/api/docs/" target="_blank" rel="noreferrer" style="color:#5f9fff; font-size:12px;">Powered by Pixabay</a>
-        <input id="pxKeyItem" type="password" placeholder="API Key" style="width:160px" />
-      </div>
-      <div id="itemLocalTab" style="flex:1 1 auto; overflow:auto; display:block;">
-        <div id="itemGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
-        <input id="itemUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
-      </div>
-      <div id="itemPixabayTab" style="flex:1 1 auto; overflow:auto; display:none; margin-top:8px;">
-          <div id="pxFormItem" class="row" style="gap:6px; flex-wrap:wrap; align-items:flex-end;">
-            <label>キーワード <input id="pxQItem" type="text" placeholder="例: potion, helmet" style="width:200px"></label>
-          <label>タイプ
-            <select id="pxTypeItem">
-              <option value="illustration" selected>イラスト</option>
-              <option value="vector">ベクター</option>
-              <option value="photo">写真</option>
-              <option value="all">すべて</option>
-            </select>
-          </label>
-          <label>向き
-            <select id="pxOriItem">
-              <option value="all" selected>すべて</option>
-              <option value="horizontal">横</option>
-              <option value="vertical">縦</option>
-            </select>
-          </label>
-          <label class="row" style="gap:6px; align-items:center;">
-            <input id="pxTransItem" type="checkbox" checked> 透過背景のみ
-          </label>
-          <label>最小W<input id="pxMinWItem" type="number" value="600" style="width:80px"></label>
-          <label>最小H<input id="pxMinHItem" type="number" value="600" style="width:80px"></label>
-          <label class="row" style="gap:6px; align-items:center;">
-            <input id="pxSafeItem" type="checkbox" checked> セーフサーチ
-          </label>
-          <button id="pxSearchItem" class="primary" type="button">検索</button>
-        </div>
-        <div id="pxGridItem" style="margin-top:8px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; align-content:start;"></div>
-        <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;">
-          <button id="pxMoreItem" type="button">もっと見る</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Asset Picker Modal (Background/Frame/Icon) -->
-  <div id="assetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); place-items:center; z-index:999;">
-    <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; width: 96vw; max-width: 96vw; height: 90vh; color:var(--text); display:flex; flex-direction:column;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <h3 id="assetModalTitle" style="margin:0; font-size:16px;">素材を選択</h3>
-        <div class="row" style="gap:8px; align-items:center;">
-          <button id="openAssetUpload" type="button" class="primary">画像を取り込む（このブラウザに保存）</button>
-          <button type="button" class="primary" onclick="(function(){document.getElementById('assetModal').style.display='none'})()">閉じる</button>
-        </div>
-      </div>
-      <div class="row" style="gap:8px; align-items:center; margin-top:8px;">
-        <button id="assetTabLocal" class="primary" type="button">ローカル</button>
-        <button id="assetTabPixabay" type="button">Pixabay</button>
-        <span class="spacer"></span>
-        <a href="https://pixabay.com/api/docs/" target="_blank" rel="noreferrer" style="color:#5f9fff; font-size:12px;">Powered by Pixabay</a>
-        <input id="pxKeyAsset" type="password" placeholder="API Key" style="width:160px" />
-      </div>
-      <div id="assetLocalTab" style="flex:1 1 auto; overflow:auto; display:block;">
-        <div id="assetGrid" style="margin-top:12px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; justify-content:space-between; flex:1 1 auto; overflow:auto;"></div>
-        <input id="assetUploadInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
-      </div>
-      <div id="assetPixabayTab" style="flex:1 1 auto; overflow:auto; display:none; margin-top:8px;">
-        <div id="pxFormAsset" class="row" style="gap:6px; flex-wrap:wrap; align-items:flex-end;">
-          <label>キーワード <input id="pxQAsset" type="text" placeholder="例: forest, castle" style="width:200px"></label>
-          <label>タイプ
-            <select id="pxTypeAsset">
-              <option value="all" selected>すべて</option>
-              <option value="photo">写真</option>
-              <option value="illustration">イラスト</option>
-              <option value="vector">ベクター</option>
-            </select>
-          </label>
-          <label>向き
-            <select id="pxOriAsset">
-              <option value="horizontal" selected>横</option>
-              <option value="vertical">縦</option>
-              <option value="all">すべて</option>
-            </select>
-          </label>
-          <label class="row" style="gap:6px; align-items:center;">
-            <input id="pxTransAsset" type="checkbox"> 透過背景のみ
-          </label>
-          <label>最小W<input id="pxMinWAsset" type="number" value="1920" style="width:80px"></label>
-          <label>最小H<input id="pxMinHAsset" type="number" value="1080" style="width:80px"></label>
-          <label class="row" style="gap:6px; align-items:center;">
-            <input id="pxSafeAsset" type="checkbox" checked> セーフサーチ
-          </label>
-          <button id="pxSearchAsset" class="primary" type="button">検索</button>
-        </div>
-        <div id="pxGridAsset" style="margin-top:8px; display:grid; grid-template-columns: repeat(auto-fill, 160px); gap:12px; align-content:start;"></div>
-        <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;">
-          <button id="pxMoreAsset" type="button">もっと見る</button>
-        </div>
-      </div>
-    </div>
-  </div>
-    <footer>
-      本「トレーディングカードクラフター」に含まれるアップロード素材およびサンプル素材は、すべてフリー素材として提供されます。これらの素材単体に対して当サービスは著作権を主張しません。「トレーディングカードクラフター」で生成された合成画像の権利は利用者に帰属し、商用利用を含め自由にご利用いただけます。ただし、商標登録や著作権の取得が自動的に保証されるものではありません。
-    </footer>
-
-    <script>
-      const CANVAS_W = 750;
-      const CANVAS_H = 1050;
-      const PADDING = 32;
-      const ICON_SIZE = 83; // 64 * 1.3 ≈ 83
-      const ICON_GAP = 12;
-      // ガイド（カード内側とゾーン）
-      const INSET = { x: 75, y: 75, w: 600, h: 900 };
-      const ZONES = {
-        main:  { x: 75, y: 75,  w: 600, h: 550 },
-        title: { x: 75, y: 625, w: 600, h: 100 },
-        desc:  { x: 75, y: 725, w: 600, h: 250 }
-      };
-
-      // Presets (lightweight, no external assets). You can later swap to real images.
-      // Built-in font options (from doc/フォント選択.md)
-      const BUILTIN_FONTS = [
-        { label: '（デフォルト）', value: 'default' },
-        { label: 'Noto Sans JP (Web)', family: 'Noto Sans JP', weights: [400,700], url: 'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap' },
-        { label: 'Noto Serif JP (Web)', family: 'Noto Serif JP', weights: [400,700], url: 'https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap' },
-        { label: 'Cinzel (Web)', family: 'Cinzel', weights: [700], url: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap' },
-        { label: 'system-ui (Local)', family: 'system-ui', local: true },
-        { label: 'Arial (Local)', family: 'Arial', local: true },
-      ];
-      let BACKGROUNDS = [
-        { key: 'deepblue', type: 'color', value: '#0b2238', label: 'Deep' },
-        { key: 'emerald',  type: 'color', value: '#0e3b2e', label: 'Emrld' },
-        { key: 'crimson',  type: 'color', value: '#3a0e16', label: 'Crmsn' },
-        { key: 'slate',    type: 'color', value: '#1a202c', label: 'Slate' },
-      ];
-      let FRAMES = [
-        { key: 'gold',   type: 'stroke', color: '#e0b84a' },
-        { key: 'silver', type: 'stroke', color: '#b8c0cc' },
-        { key: 'iris',   type: 'stroke', color: '#6aa9ff' },
-        { key: 'onyx',   type: 'stroke', color: '#444b57' },
-      ];
-      let ICONS = [
-        { key: 'sword', shape: 'triangle', color: '#f87171', label: '剣' },
-        { key: 'shield', shape: 'rect', color: '#60a5fa', label: '盾' },
-        { key: 'star', shape: 'star', color: '#fbbf24', label: '星' },
-        { key: 'orb', shape: 'circle', color: '#34d399', label: '珠' },
-      ];
-
-      // Stage and layers
-      const stage = new Konva.Stage({
-        container: 'stageContainer', width: CANVAS_W, height: CANVAS_H,
-      });
-      const bgLayer = new Konva.Layer();
-      const frameLayer = new Konva.Layer();
-      const artLayer = new Konva.Layer(); // reserved for future user art
-      const iconsLayer = new Konva.Layer();
-      const textLayer = new Konva.Layer();
-      const guideLayer = new Konva.Layer();
-      stage.add(bgLayer, frameLayer, artLayer, iconsLayer, textLayer, guideLayer);
-
-      // Background rect placeholder (resized by autoLayout or selection)
-      const backgroundRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, fillEnabled: false, listening: false });
-      bgLayer.add(backgroundRect);
-
-      // Frame placeholder (no outer stroke to keep export transparent)
-      const frameRect = new Konva.Rect({ x: 0, y: 0, width: CANVAS_W, height: CANVAS_H, strokeEnabled: false, fillEnabled: false, listening: false });
-      frameLayer.add(frameRect);
-      let backgroundImageNode = null;
-      let frameImageNode = null;
-      let itemImageNode = null;
-      let itemCurrentUrl = null;
-      // アイコンは最大3スロット
-      let iconImageNodes = [null, null, null];
-      let iconCurrentUrls = [null, null, null];
-      let currentIconSlot = 0; // 0:一番目, 1:二番目, 2:三番目
-      const TITLE_BODY_OFFSET_Y = 110;
-      const BACKGROUND_OFFSET_Y = 10;
-      const ITEM_OFFSET_Y = 30;
-
-      // Title and body text nodes
-      const titleText = new Konva.Text({
-        x: ZONES.title.x + 16, y: ZONES.title.y + 8,
-        width: ZONES.title.w - 32,
-        text: '',
-        fontFamily: 'Noto Sans JP, system-ui, sans-serif',
-        fontStyle: '700',
-        fontSize: 32,
-        fill: '#ffffff',
-        align: 'center',
-        draggable: true,
-      });
-      const bodyText = new Konva.Text({
-        x: ZONES.desc.x + 24, y: ZONES.desc.y + 12,
-        width: ZONES.desc.w - 48,
-        text: '',
-        fontFamily: 'Noto Sans JP, system-ui, sans-serif',
-        fontSize: 24,
-        lineHeight: 1.25,
-        fill: '#ffffff',
-        align: 'left',
-        draggable: true,
-      });
-      const bodyText2 = new Konva.Text({
-        x: ZONES.desc.x + 24, y: ZONES.desc.y + 12,
-        width: ZONES.desc.w - 48,
-        text: '',
-        fontFamily: 'Noto Sans JP, system-ui, sans-serif',
-        fontSize: 24,
-        lineHeight: 1.25,
-        fill: '#ffffff',
-        align: 'left',
-        draggable: true,
-        visible: true,
-      });
-      textLayer.add(titleText, bodyText, bodyText2);
-
-      // Selection handling (simple visual feedback)
-      let selected = null;
-      function selectNode(node) {
-        if (selected && selected !== node) {
-          selected.shadowEnabled(false);
-          selected.shadowColor('');
-          selected.shadowBlur(0);
-        }
-        selected = node;
-        if (selected) {
-          selected.shadowEnabled(true);
-          selected.shadowColor('#5f9fff');
-          selected.shadowBlur(10);
-        }
-        stage.draw();
-      }
-      stage.on('click tap', (e) => {
-        if (e.target === stage) { selectNode(null); return; }
-        selectNode(e.target);
-      });
-
-      // Wheel scaling: scale selected node; if none, scale stage
-      stage.container().addEventListener('wheel', (evt) => {
-        evt.preventDefault();
-        const scaleBy = 1.05;
-        const oldScale = selected ? selected.scaleX() : stage.scaleX();
-        const mousePointTo = stage.getPointerPosition();
-        const direction = evt.deltaY > 0 ? -1 : 1;
-        const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-        if (selected) {
-          selected.scale({ x: newScale, y: newScale });
-        } else {
-          const stagePos = stage.position();
-          const newPos = {
-            x: mousePointTo.x - (mousePointTo.x - stagePos.x) * (newScale / oldScale),
-            y: mousePointTo.y - (mousePointTo.y - stagePos.y) * (newScale / oldScale),
-          };
-          stage.scale({ x: newScale, y: newScale });
-          stage.position(newPos);
-        }
-        stage.batchDraw();
-      }, { passive: false });
-
-      // Build thumbnails
-      function b64(s){ try { return btoa(unescape(encodeURIComponent(s))); } catch(e){ return ''; } }
-      function ensureFontLink(url){
-        const id = 'gf-' + b64(url);
-        if (!document.getElementById(id)){
-          const l = document.createElement('link');
-          l.id = id; l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l);
-        }
-      }
-      // New per-title/body font selection utilities
-      function buildFontOptionList() {
-        const userMeta = JSON.parse(localStorage.getItem('cardgen.fontUserMeta') || '[]');
-        return BUILTIN_FONTS.concat(userMeta.map(m => ({ label: `${m.family} (Web)`, family: m.family, url: m.url, weights: m.weights })));
-      }
-      function stackForFamily(family) {
-        if (!family || family === 'default') return 'Noto Sans JP, system-ui, sans-serif';
-        return `"${family}", Noto Sans JP, system-ui, sans-serif`;
-      }
-      async function applyFontTo(nodeType, family, url) {
-        if (url) ensureFontLink(url);
-        try { await document.fonts.ready; } catch(e){}
-        const stack = stackForFamily(family);
-        if (nodeType === 'title') {
-          titleText.fontFamily(stack);
-          const tf = document.getElementById('titleFont'); if (tf) tf.value = stack;
-          localStorage.setItem('cardgen.fontTitle', stack);
-        } else {
-          bodyText.fontFamily(stack);
-          const bf = document.getElementById('bodyFont'); if (bf) bf.value = stack;
-          localStorage.setItem('cardgen.fontBody', stack);
-        }
-        textLayer.draw();
-      }
-      function rebuildFontSelects() {
-        const options = buildFontOptionList();
-        const sTitle = document.getElementById('titleFontSelect');
-        const sBody = document.getElementById('bodyFontSelect');
-        if (!sTitle || !sBody) return;
-        [sTitle, sBody].forEach(sel => {
-          sel.innerHTML = '';
-          options.forEach((f) => {
-            const opt = document.createElement('option');
-            opt.textContent = f.label; opt.value = f.family || f.value || 'default';
-            opt.dataset.url = f.url || '';
-            sel.appendChild(opt);
-          });
-        });
-        const savedTitle = localStorage.getItem('cardgen.fontTitle');
-        const savedBody = localStorage.getItem('cardgen.fontBody');
-        function restore(sel, saved) {
-          if (!saved) { sel.value = 'default'; return; }
-          const fam = saved.split(',')[0].replace(/["']/g,'').trim();
-          sel.value = fam || 'default';
-        }
-        restore(sTitle, savedTitle);
-        restore(sBody, savedBody);
-      }
-      function openFontManager(who) {
-        const modal = document.getElementById('fontModal');
-        if (!modal) return;
-        modal.dataset.target = who;
-        modal.style.display = 'grid';
-      }
-      async function addFontFromModal() {
-        const customUrl = document.getElementById('fmUrl');
-        const urlRaw = (customUrl?.value || '').trim();
-        if (!urlRaw) { alert('Google Fonts の CSS URL を入力してください'); return; }
-        const url = urlRaw;
-        // Try to extract family=... (first one), strip weights suffix
-        let family = 'Custom';
-        try {
-          const m = url.match(/[?&]family=([^&]+)/i);
-          if (m) {
-            const famParam = decodeURIComponent(m[1]).split('&')[0];
-            // famParam like "Dela+Gothic+One" or "Noto+Sans+JP:wght@400;700"
-            family = famParam.split(':')[0].replace(/\+/g, ' ');
-          }
-        } catch (e) {}
-        const meta = { label: `${family} (Web)`, family, weights: [], url };
-        ensureFontLink(meta.url);
-        try { await document.fonts.ready; } catch(e){}
-        const userMeta = JSON.parse(localStorage.getItem('cardgen.fontUserMeta') || '[]');
-        if (!userMeta.some(m => m.family === meta.family)) userMeta.push(meta);
-        localStorage.setItem('cardgen.fontUserMeta', JSON.stringify(userMeta));
-        rebuildFontSelects();
-        const modal = document.getElementById('fontModal');
-        const who = modal.dataset.target || 'title';
-        const sel = who === 'title' ? document.getElementById('titleFontSelect') : document.getElementById('bodyFontSelect');
-        sel.value = meta.family;
-        await applyFontTo(who, meta.family, meta.url);
-        closeFontManager();
-      }
-      function closeFontManager(){ const m=document.getElementById('fontModal'); if (m) m.style.display='none'; }
-      function applyMainFontStack(stack){
-        // Apply to text nodes and sync inputs if present
-        if (stack && stack !== 'default') {
-          titleText.fontFamily(stack);
-          bodyText.fontFamily(stack);
-          const tf = document.getElementById('titleFont'); if (tf) tf.value = stack;
-          const bf = document.getElementById('bodyFont'); if (bf) bf.value = stack;
-        } else {
-          const def = 'Noto Sans JP, system-ui, sans-serif';
-          titleText.fontFamily(def);
-          bodyText.fontFamily(def);
-          const tf = document.getElementById('titleFont'); if (tf) tf.value = def;
-          const bf = document.getElementById('bodyFont'); if (bf) bf.value = def;
-        }
-        textLayer.draw();
-      }
-      async function loadAndApplyFont(meta){
-        if (!meta || meta.value === 'default') { applyMainFontStack('default'); return; }
-        if (meta.url) { ensureFontLink(meta.url); }
-        try { await document.fonts.ready; } catch(e){}
-        // Build stack: user family first, then default stack
-        const stack = `"${meta.family}", Noto Sans JP, system-ui, sans-serif`;
-        applyMainFontStack(stack);
-      }
-      function initFontSelector(){
-        const sel = document.getElementById('fontSelect');
-        if (!sel) return;
-        const savedStack = localStorage.getItem('cardgen.fontUser');
-        const firstDone = localStorage.getItem('cardgen.firstRunComplete') === 'true';
-        // Populate
-        sel.innerHTML = '';
-        BUILTIN_FONTS.forEach((f,i)=>{
-          const opt = document.createElement('option');
-          opt.textContent = f.label; opt.value = f.value || f.family || 'default';
-          opt.dataset.idx = i;
-          sel.appendChild(opt);
-        });
-        // Disable after first run
-        sel.disabled = firstDone;
-        // Restore selection
-        if (savedStack) {
-          // Try to match by family at head of stack
-          const fam = savedStack.split(',')[0].replace(/["']/g,'').trim();
-          const idx = BUILTIN_FONTS.findIndex(f => (f.family||'default') === fam);
-          if (idx >= 0) sel.value = BUILTIN_FONTS[idx].family || 'default';
-          applyMainFontStack(savedStack);
-        } else {
-          sel.value = 'default';
-          applyMainFontStack('default');
-        }
-        sel.addEventListener('change', async ()=>{
-          const idx = Number(sel.options[sel.selectedIndex].dataset.idx||'-1');
-          const meta = idx>=0 ? BUILTIN_FONTS[idx] : { value: 'default' };
-          await loadAndApplyFont(meta);
-          // Save and lock
-          const stack = (meta && meta.value!=='default') ? `"${meta.family}", Noto Sans JP, system-ui, sans-serif` : 'Noto Sans JP, system-ui, sans-serif';
-          localStorage.setItem('cardgen.fontUser', stack);
-          localStorage.setItem('cardgen.firstRunComplete', 'true');
-          sel.disabled = true;
-        });
-      }
-      function setCounts() {
-        const nBg = (window.ASSET_BG_LIST || []).length || BACKGROUNDS.length;
-        const nFr = (window.ASSET_FRAME_LIST || []).length || FRAMES.length;
-        const nIt = (window.ASSET_ITEM_LIST || []).length;
-        const nIc = (window.ASSET_ICON_LIST || []).length || ICONS.length;
-        const s = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = `(${v})`; };
-        s('bgCount', nBg); s('frameCount', nFr); s('itemCount', nIt); s('iconCount', nIc);
-      }
-      function buildThumbs() { setCounts(); }
-
-      // Apply background/frame/icon
-      function applyBackground(bg) {
-        if (bg.type === 'color') {
-          backgroundRect.fillEnabled(true);
-          backgroundRect.fill(bg.value);
-          bgLayer.draw();
-        }
-      }
-      function applyFrame(fr) {
-        frameRect.stroke(fr.color);
-        frameLayer.draw();
-      }
-      function loadImage(url) {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = url;
-        });
-      }
-      async function applyBackgroundImageURL(url) {
-        const img = await loadImage(url);
-        if (!backgroundImageNode) {
-          backgroundImageNode = new Konva.Image({});
-          bgLayer.add(backgroundImageNode);
-        }
-        // ensure solid color rect does not affect image/transparent export
-        backgroundRect.fillEnabled(false);
-        // 等比 cover + 上側に少し余白（従来挙動に戻す）
-        const scale = Math.max(ZONES.main.w / img.width, ZONES.main.h / img.height);
-        const w = img.width * scale; const h = img.height * scale;
-        const x = ZONES.main.x + (ZONES.main.w - w) / 2;
-        const y = ZONES.main.y + BACKGROUND_OFFSET_Y; // 上にオフセット
-        backgroundImageNode.image(img);
-        backgroundImageNode.position({ x, y });
-        backgroundImageNode.size({ width: w, height: h });
-        bgLayer.draw();
-      }
-      async function applyFrameImageURL(url) {
-        const img = await loadImage(url);
-        if (!frameImageNode) {
-          frameImageNode = new Konva.Image({});
-          frameLayer.add(frameImageNode);
-        }
-        // Fit canvas (assumes correct aspect). If aspect differs, this stretches.
-        frameImageNode.image(img);
-        frameImageNode.position({ x: 0, y: 0 });
-        frameImageNode.size({ width: CANVAS_W, height: CANVAS_H });
-        frameLayer.draw();
-        // ファイル名からゾーン高を取得
-        parseFrameZonesFromName(url);
-        // 位置の初期化は自動配置ボタンまで行わない
-      }
-      async function addItemImageURL(url) {
-        const img = await loadImage(url);
-        if (itemImageNode && itemCurrentUrl === url) {
-          // toggle delete
-          itemImageNode.destroy(); itemImageNode = null; itemCurrentUrl = null; artLayer.draw();
-          return;
-        }
-        if (!itemImageNode) {
-          itemImageNode = new Konva.Image({ image: img, draggable: true });
-          artLayer.add(itemImageNode);
-          itemImageNode.on('click tap', () => selectNode(itemImageNode));
-          // initial center fit in main zone
-          const scale = Math.min(ZONES.main.w / img.width, ZONES.main.h / img.height);
-          itemImageNode.size({ width: img.width * scale, height: img.height * scale });
-          itemImageNode.position({ x: ZONES.main.x + (ZONES.main.w - itemImageNode.width())/2, y: ZONES.main.y + (ZONES.main.h - itemImageNode.height())/2 + ITEM_OFFSET_Y });
-          artLayer.draw();
-        } else {
-          // replace image, keep center position
-          const cx = itemImageNode.x() + itemImageNode.width()/2;
-          const cy = itemImageNode.y() + itemImageNode.height()/2;
-          const scale = Math.min(ZONES.main.w / img.width, ZONES.main.h / img.height);
-          itemImageNode.image(img);
-          itemImageNode.size({ width: img.width * scale, height: img.height * scale });
-          itemImageNode.position({ x: cx - itemImageNode.width()/2, y: cy - itemImageNode.height()/2 });
-          artLayer.draw();
-        }
-        itemCurrentUrl = url;
-      }
-
-      async function addBadgeIconURL(url) {
-        const img = await loadImage(url);
-        const slot = currentIconSlot; // 0..2
-        const existing = iconImageNodes[slot];
-        const existingUrl = iconCurrentUrls[slot];
-        const size = 52; // 40 * 1.3 ≈ 52 (初期表示を30%拡大)
-        if (existing && existingUrl === url) {
-          existing.destroy(); iconImageNodes[slot] = null; iconCurrentUrls[slot] = null; iconsLayer.draw();
-          return;
-        }
-        if (!existing) {
-          const scale = size / Math.max(img.width, img.height);
-          const node = new Konva.Image({ image: img, width: img.width * scale, height: img.height * scale, draggable: true });
-          iconsLayer.add(node);
-          node.on('click tap', () => selectNode(node));
-          // initial position: title右寄せ
-          const tx = (ZONES.title.h > 0 ? ZONES.title.x : ZONES.main.x);
-          const tw = (ZONES.title.h > 0 ? ZONES.title.w : ZONES.main.w);
-          const ty = (ZONES.title.h > 0 ? ZONES.title.y : ZONES.main.y);
-          const x = tx + tw - node.width() - 28;
-          const y = ty + TITLE_BODY_OFFSET_Y + 8 - 10 + slot * (node.height() + 6); // 10px 上に
-          node.position({ x, y });
-          iconImageNodes[slot] = node; iconCurrentUrls[slot] = url;
-          iconsLayer.draw();
-        } else {
-          const cx = existing.x() + existing.width()/2;
-          const cy = existing.y() + existing.height()/2;
-          const scale = size / Math.max(img.width, img.height);
-          existing.image(img);
-          existing.size({ width: img.width * scale, height: img.height * scale });
-          existing.position({ x: cx - existing.width()/2, y: cy - existing.height()/2 });
-          iconCurrentUrls[slot] = url;
-          iconsLayer.draw();
-        }
-      }
-      function addIcon(ic) {
-        let node;
-        if (ic.shape === 'circle' || ic.shape === 'orb') {
-          node = new Konva.Circle({ radius: ICON_SIZE/2, fill: ic.color, draggable: true });
-        } else if (ic.shape === 'rect' || ic.shape === 'shield') {
-          node = new Konva.Rect({ width: ICON_SIZE, height: ICON_SIZE, cornerRadius: 12, fill: ic.color, draggable: true });
-        } else if (ic.shape === 'star') {
-          node = new Konva.Star({ numPoints: 5, innerRadius: ICON_SIZE/4, outerRadius: ICON_SIZE/2, fill: ic.color, draggable: true });
-        } else { // triangle / sword placeholder
-          node = new Konva.RegularPolygon({ sides: 3, radius: ICON_SIZE/2, fill: ic.color, draggable: true });
-        }
-        // initial position roughly top-right area
-        node.position({ x: CANVAS_W - PADDING - ICON_SIZE/2, y: PADDING + ICON_SIZE/2 });
-        node.on('click tap', () => selectNode(node));
-        iconsLayer.add(node);
-        iconsLayer.draw();
-      }
-
-      // Auto layout
-      function measureTextWidth(text, fontSize, fontFamily, fontStyle) {
-        const c = measureTextWidth._c || (measureTextWidth._c = document.createElement('canvas'));
-        const ctx = c.getContext('2d');
-        const style = fontStyle && fontStyle !== 'normal' ? fontStyle + ' ' : '';
-        ctx.font = `${style}${fontSize}px ${fontFamily}`;
-        return ctx.measureText(text || '').width;
-      }
-      function fitTextWidth(textNode, maxWidth, minSize = 18, maxSize = 56) {
-        let size = Math.min(Math.max(textNode.fontSize(), minSize), maxSize);
-        const fam = textNode.fontFamily();
-        const style = textNode.fontStyle();
-        textNode.fontSize(size);
-        while (measureTextWidth(textNode.text(), size, fam, style) > maxWidth && size > minSize) {
-          size -= 1;
-          textNode.fontSize(size);
-        }
-      }
-      function parseFrameZonesFromName(url) {
-        const name = url.split('/').pop();
-        const m = name && name.match(/frame-(\d+)-(\d+)-(\d+)/);
-        if (m) {
-          const mainH = parseInt(m[1], 10), titleH = parseInt(m[2], 10), descH = parseInt(m[3], 10);
-          // 水平方向は共通 600px、垂直は Title→Main→Desc の順にINSET内へ詰める
-          ZONES.main  = { x: INSET.x, y: INSET.y,          w: INSET.w, h: mainH };
-          ZONES.title = { x: INSET.x, y: INSET.y + mainH, w: INSET.w, h: titleH };
-          ZONES.desc  = { x: INSET.x, y: INSET.y + mainH + titleH, w: INSET.w, h: descH };
-        }
-      }
-      function autoLayout() {
-        // Background cover (already fills canvas via rect)
-        backgroundRect.position({ x: 0, y: 0 });
-        backgroundRect.size({ width: CANVAS_W, height: CANVAS_H });
-
-        // Frame fit
-        frameRect.position({ x: 0, y: 0 });
-        frameRect.size({ width: CANVAS_W, height: CANVAS_H });
-
-        // Title and body inside their zones with offset
-        const titleZone = (ZONES.title.h > 0) ? ZONES.title : { x: ZONES.main.x, y: ZONES.main.y, w: ZONES.main.w, h: 0 };
-        titleText.position({ x: titleZone.x + 16, y: titleZone.y + 8 + TITLE_BODY_OFFSET_Y });
-        titleText.width(titleZone.w - 32);
-        fitTextWidth(titleText, titleText.width(), 24, 36);
-
-        // Body in Description zone with padding 24/12 and offset, plus 1-char side padding
-        const bodyFam = bodyText.fontFamily();
-        const bodyStyle = bodyText.fontStyle();
-        const charPad = Math.max(8, Math.ceil(measureTextWidth('あ', bodyText.fontSize(), bodyFam, bodyStyle)) || bodyText.fontSize());
-        const basePadX = 24;
-        bodyText.width(Math.max(10, ZONES.desc.w - (basePadX * 2) - (charPad * 2)));
-        bodyText.x(ZONES.desc.x + basePadX + charPad);
-        bodyText.y(ZONES.desc.y + 12 + TITLE_BODY_OFFSET_Y);
-        // Second body (if not empty) just below the first
-        bodyText2.width(bodyText.width());
-        bodyText2.x(bodyText.x());
-        if ((bodyText2.text()||'').length>0) {
-          bodyText2.y(bodyText.y() + bodyText.height() + 6);
-        } else {
-          bodyText2.y(bodyText.y()); // keep same; user can drag
-        }
-        textLayer.draw();
-
-        // Main item image fit
-        if (itemImageNode && itemImageNode.image()) {
-          const img = itemImageNode.image();
-          const scale = Math.min(ZONES.main.w / img.width, ZONES.main.h / img.height);
-          itemImageNode.size({ width: img.width * scale, height: img.height * scale });
-          itemImageNode.position({ x: ZONES.main.x + (ZONES.main.w - itemImageNode.width())/2, y: ZONES.main.y + (ZONES.main.h - itemImageNode.height())/2 });
-        }
-
-        stage.batchDraw();
-      }
-
-      // Inputs
-      const titleInput = document.getElementById('titleInput');
-      const bodyInput = document.getElementById('bodyInput');
-      titleInput.addEventListener('input', () => { titleText.text(titleInput.value || ''); textLayer.draw(); });
-      bodyInput.addEventListener('input', () => { bodyText.text(bodyInput.value || ''); textLayer.draw(); });
-
-      // Text style controls
-      const titleColor = document.getElementById('titleColor');
-      const titleSize = document.getElementById('titleSize');
-      const titleFont = document.getElementById('titleFont');
-      const titleWeight = document.getElementById('titleWeight');
-      function applyTitleStyle() {
-        if (titleColor) titleText.fill(titleColor.value || '#ffffff');
-        if (titleSize) {
-          const sz = Math.max(8, parseInt(titleSize.value || '32', 10) || 32);
-          titleText.fontSize(sz);
-        }
-        if (titleFont) titleText.fontFamily(titleFont.value || 'Noto Sans JP, system-ui, sans-serif');
-        if (titleWeight) titleText.fontStyle(titleWeight.value === '700' ? '700' : 'normal');
-        textLayer.draw();
-      }
-      titleColor?.addEventListener('input', applyTitleStyle);
-      titleSize?.addEventListener('input', applyTitleStyle);
-      titleFont?.addEventListener('change', applyTitleStyle);
-      titleWeight?.addEventListener('change', applyTitleStyle);
-
-      const bodyColor = document.getElementById('bodyColor');
-      const bodySize = document.getElementById('bodySize');
-      const bodyFont = document.getElementById('bodyFont');
-      function applyBodyStyle() {
-        if (bodyColor) bodyText.fill(bodyColor.value || '#e6edf3');
-        if (bodySize) {
-          const sz = Math.max(8, parseInt(bodySize.value || '20', 10) || 20);
-          bodyText.fontSize(sz);
-        }
-        if (bodyFont) bodyText.fontFamily(bodyFont.value || 'Noto Sans JP, system-ui, sans-serif');
-        textLayer.draw();
-      }
-      bodyColor?.addEventListener('input', applyBodyStyle);
-      bodySize?.addEventListener('input', applyBodyStyle);
-      bodyFont?.addEventListener('change', applyBodyStyle);
-
-      // Buttons
-      const alBtn = document.getElementById('autoLayoutBtn');
-      if (alBtn) alBtn.addEventListener('click', autoLayout);
-      const exportResSel = document.getElementById('exportRes');
-      document.getElementById('exportBtn').addEventListener('click', () => {
-        const pr = Math.max(0.5, parseFloat(exportResSel?.value || '1') || 1);
-        const uri = stage.toDataURL({ mimeType: 'image/png', pixelRatio: pr });
-        const a = document.createElement('a');
-        a.href = uri;
-        a.download = 'card.png';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      });
-
-      // Font selects events
-      document.getElementById('titleFontSelect')?.addEventListener('change', async (e)=>{
-        const sel = e.target; const fam = sel.value; const url = sel.options[sel.selectedIndex].dataset.url;
-        await applyFontTo('title', fam, url);
-      });
-      document.getElementById('bodyFontSelect')?.addEventListener('change', async (e)=>{
-        const sel = e.target; const fam = sel.value; const url = sel.options[sel.selectedIndex].dataset.url;
-        await applyFontTo('body', fam, url);
-      });
-      document.getElementById('openFontMgrTitle')?.addEventListener('click', ()=> openFontManager('title'));
-      document.getElementById('openFontMgrBody')?.addEventListener('click', ()=> openFontManager('body'));
-      // Pixabay key sync
-      function pxKey(){
-        const a=document.getElementById('pxKeyAsset')?.value?.trim();
-        const b=document.getElementById('pxKeyItem')?.value?.trim();
-        return a || b || sessionStorage.getItem('pixabay.key') || '';
-      }
-      function savePxKeyFromInputs(){
-        const k = pxKey(); if (k) sessionStorage.setItem('pixabay.key', k);
-      }
-      document.getElementById('pxKeyAsset')?.addEventListener('input', savePxKeyFromInputs);
-      document.getElementById('pxKeyItem')?.addEventListener('input', savePxKeyFromInputs);
-      (function(){ const k=sessionStorage.getItem('pixabay.key'); if (k){ const a=document.getElementById('pxKeyAsset'); const b=document.getElementById('pxKeyItem'); if(a) a.value=k; if(b) b.value=k; } })();
-
-      // Item picker & upload
-      document.getElementById('openItemPicker')?.addEventListener('click', () => openItemPicker());
-      document.getElementById('openBgPicker')?.addEventListener('click', () => openAssetPicker('bg'));
-      document.getElementById('openFramePicker')?.addEventListener('click', () => openAssetPicker('frame'));
-      document.getElementById('openIconPicker')?.addEventListener('click', () => openAssetPicker('icon'));
-      // base icon slot is 0
-      document.getElementById('openIconPicker')?.addEventListener('click', () => { currentIconSlot = 0; });
-      document.getElementById('openItemUpload')?.addEventListener('click', () => openItemUpload());
-      // pixabay tab buttons for asset modal
-      document.getElementById('assetTabLocal')?.addEventListener('click', ()=> setAssetTab('local'));
-      document.getElementById('assetTabPixabay')?.addEventListener('click', ()=> setAssetTab('pixabay'));
-      // Tabs init
-      function setItemTab(which){
-        const a = document.getElementById('itemLocalTab');
-        const b = document.getElementById('itemPixabayTab');
-        const ba = document.getElementById('itemTabLocal');
-        const bb = document.getElementById('itemTabPixabay');
-        if (which==='pixabay'){ a.style.display='none'; b.style.display='block'; ba.classList.remove('primary'); bb.classList.add('primary'); initPixabayItemPreset(); }
-        else { a.style.display='block'; b.style.display='none'; ba.classList.add('primary'); bb.classList.remove('primary'); }
-      }
-      function setAssetTab(which){
-        const a = document.getElementById('assetLocalTab');
-        const b = document.getElementById('assetPixabayTab');
-        const ba = document.getElementById('assetTabLocal');
-        const bb = document.getElementById('assetTabPixabay');
-        if (which==='pixabay'){ a.style.display='none'; b.style.display='block'; ba.classList.remove('primary'); bb.classList.add('primary'); initPixabayAssetPreset(); }
-        else { a.style.display='block'; b.style.display='none'; ba.classList.add('primary'); bb.classList.remove('primary'); }
-      }
-      document.getElementById('itemTabLocal')?.addEventListener('click', ()=> setItemTab('local'));
-      document.getElementById('itemTabPixabay')?.addEventListener('click', ()=> setItemTab('pixabay'));
-      document.getElementById('assetTabLocal')?.addEventListener('click', ()=> setAssetTab('local'));
-      document.getElementById('assetTabPixabay')?.addEventListener('click', ()=> setAssetTab('pixabay'));
-
-      function openItemPicker(){
-        const modal = document.getElementById('itemModal');
-        buildItemGrid();
-        setItemTab('local');
-        // enable drag & drop upload into the item grid
-        try { setupDropUpload(document.getElementById('itemGrid'), ()=> 'item', async ()=>{ await loadUploads(); buildItemGrid(); }); } catch(e){}
-        modal.style.display='grid';
-      }
-      function closeItemPicker(){ document.getElementById('itemModal').style.display='none'; }
-      function buildItemGrid(){
-        const grid = document.getElementById('itemGrid');
-        if (!grid) return;
-        grid.innerHTML='';
-        grid.classList.add('dropzone');
-        // Uploaded (session/IndexedDB)
-        (window.UPLOAD_ITEMS || []).forEach(u => {
-          const card = document.createElement('div'); card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch';
-          const d = document.createElement('div'); d.className = 'thumb item-thumb';
-          const img = document.createElement('img'); img.src = u.url; d.appendChild(img);
-          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = `${u.name}（ブラウザ内）`; d.appendChild(cap);
-          d.title = u.name;
-          d.addEventListener('click', async ()=>{ await addItemImageURL(u.url); closeItemPicker(); });
-          const del = document.createElement('button'); del.textContent='削除'; del.style.marginTop='6px'; del.style.fontSize='12px'; del.addEventListener('click', async (ev)=>{
-            ev.stopPropagation();
-            if (!confirm('このブラウザから削除します。よろしいですか？')) return;
-            await idbDeleteUpload(u.id);
-            await loadUploads();
-            buildItemGrid();
-          });
-          card.appendChild(d); card.appendChild(del);
-          grid.appendChild(card);
-        });
-        // Manifest items
-        (window.ASSET_ITEM_LIST || []).forEach(url => {
-          const d = document.createElement('div'); d.className = 'thumb item-thumb';
-          const img = document.createElement('img'); img.src = url; d.appendChild(img);
-          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = url.split('/').pop(); d.appendChild(cap);
-          d.title = url.split('/').pop();
-          d.addEventListener('click', async ()=>{ await addItemImageURL(url); closeItemPicker(); });
-          grid.appendChild(d);
-        });
-        const total = (window.UPLOAD_ITEMS?.length || 0) + (window.ASSET_ITEM_LIST?.length || 0);
-        const itCount = document.getElementById('itemCount'); if (itCount) itCount.textContent = `(${total})`;
-      }
-      async function openItemUpload(){
-        const up = document.getElementById('itemUploadInput');
-        up.value=''; up.click();
-      }
-      // IndexDB helpers for uploads (no OS permissions needed)
-      function idbOpen(){
-        return new Promise((resolve,reject)=>{
-          const req = indexedDB.open('cardgen-db', 1);
-          req.onupgradeneeded = (e)=>{
-            const db = req.result;
-            if (!db.objectStoreNames.contains('uploads')) db.createObjectStore('uploads', { keyPath: 'id', autoIncrement: true });
-          };
-          req.onsuccess = ()=> resolve(req.result);
-          req.onerror = ()=> reject(req.error);
-        });
-      }
-      async function idbAddUpload(file, category, meta){
-        const db = await idbOpen();
-        return new Promise((resolve,reject)=>{
-          const tx = db.transaction('uploads','readwrite');
-          const st = tx.objectStore('uploads');
-          const rec = { name: file.name, type: file.type, blob: file, createdAt: Date.now(), category: category || 'item' };
-          if (meta && typeof meta === 'object') {
-            if (meta.source) rec.source = meta.source;
-            if (meta.sourceMeta) rec.sourceMeta = meta.sourceMeta;
-          }
-          const r = st.add(rec);
-          r.onsuccess = ()=> resolve(r.result);
-          r.onerror = ()=> reject(r.error);
-        });
-      }
-      async function idbListUploads(){
-        const db = await idbOpen();
-        return new Promise((resolve,reject)=>{
-          const tx = db.transaction('uploads','readonly');
-          const st = tx.objectStore('uploads');
-          const items = [];
-          const r = st.openCursor();
-          r.onsuccess = (e)=>{
-            const cur = e.target.result;
-            if (cur){ items.push(cur.value); cur.continue(); }
-            else resolve(items);
-          };
-          r.onerror = ()=> reject(r.error);
-        });
-      }
-      async function idbDeleteUpload(id){
-        const db = await idbOpen();
-        return new Promise((resolve,reject)=>{
-          const tx = db.transaction('uploads','readwrite');
-          const st = tx.objectStore('uploads');
-          const r = st.delete(id);
-          r.onsuccess = ()=> resolve();
-          r.onerror = ()=> reject(r.error);
-        });
-      }
-      async function loadUploads(){
-        try {
-          const list = await idbListUploads();
-          // create object URLs for display
-          const mapRec = (rec)=> ({ id: rec.id, name: rec.name, url: URL.createObjectURL(rec.blob), type: rec.type, category: rec.category||'item', source: rec.source||'local', sourceMeta: rec.sourceMeta });
-          const mapped = list.map(mapRec);
-          window.UPLOAD_ITEMS = mapped.filter(r=>r.category==='item');
-          window.UPLOAD_BG = mapped.filter(r=>r.category==='bg');
-          window.UPLOAD_FRAME = mapped.filter(r=>r.category==='frame');
-          window.UPLOAD_ICON = mapped.filter(r=>r.category==='icon');
-        } catch(e) {
-          console.warn('IndexedDB not available', e);
-          window.UPLOAD_ITEMS = []; window.UPLOAD_BG=[]; window.UPLOAD_FRAME=[]; window.UPLOAD_ICON=[];
-        }
-      }
-      document.getElementById('itemUploadInput')?.addEventListener('change', async (e)=>{
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        try {
-          await idbAddUpload(f, 'item');
-          await loadUploads();
-          buildItemGrid();
-        } catch(err) {
-          console.error('Upload store failed', err);
-        }
-      });
-
-      // Size adjusters for item and icon
-      function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
-      function scaleKonvaImageKeepCenter(node, factor, minW=24, maxW=ZONES.main.w){
-        if (!node) return;
-        const w = node.width(); const h = node.height();
-        let newW = clamp(w * factor, minW, maxW);
-        let newH = h * (newW / w);
-        const cx = node.x() + w/2; const cy = node.y() + h/2;
-        node.size({ width: newW, height: newH });
-        node.position({ x: cx - newW/2, y: cy - newH/2 });
-        node.getLayer()?.batchDraw();
-      }
-      document.getElementById('itemScaleMinus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(itemImageNode, 0.9, 32, ZONES.main.w));
-      document.getElementById('itemScalePlus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(itemImageNode, 1.1, 32, ZONES.main.w));
-      document.getElementById('iconScaleMinus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[0], 0.9, 16, 256));
-      document.getElementById('iconScalePlus')?.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[0], 1.1, 16, 256));
-
-      // Dynamic extra areas (icons 2/3, body2)
-      const createdIconAreas = [false,false,false]; // slot0 is base (not dynamic)
-      document.getElementById('addIconArea')?.addEventListener('click', ()=>{
-        const slot = [1,2].find(i => !createdIconAreas[i]);
-        if (slot === undefined) return;
-        const container = document.getElementById('extraAreas');
-        const wrap = document.createElement('div'); wrap.className='section';
-        const title = document.createElement('div'); title.className='muted'; title.textContent = `追加アイコン${slot+1}`;
-        const row = document.createElement('div'); row.className='row'; row.style.gap='6px';
-        const btnSel = document.createElement('button'); btnSel.textContent='アイコンを選択'; btnSel.className='primary';
-        btnSel.addEventListener('click', ()=>{ currentIconSlot = slot; openAssetPicker('icon'); });
-        const btnMinus = document.createElement('button'); btnMinus.textContent='－'; btnMinus.style.width='32px'; btnMinus.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[slot], 0.9, 16, 256));
-        const btnPlus  = document.createElement('button'); btnPlus.textContent='＋'; btnPlus.style.width='32px'; btnPlus.addEventListener('click', ()=> scaleKonvaImageKeepCenter(iconImageNodes[slot], 1.1, 16, 256));
-        const btnDel = document.createElement('button'); btnDel.textContent='削除'; btnDel.addEventListener('click', ()=>{
-          if (iconImageNodes[slot]) { iconImageNodes[slot].destroy(); iconImageNodes[slot]=null; iconCurrentUrls[slot]=null; iconsLayer.draw(); }
-          wrap.remove(); createdIconAreas[slot]=false;
-        });
-        row.appendChild(btnSel); row.appendChild(btnMinus); row.appendChild(btnPlus); row.appendChild(btnDel);
-        wrap.appendChild(title); wrap.appendChild(row); container.appendChild(wrap);
-        createdIconAreas[slot]=true;
-      });
-
-      let body2AreaCreated = false;
-      document.getElementById('addBodyArea')?.addEventListener('click', ()=>{
-        if (body2AreaCreated) return;
-        const container = document.getElementById('extraAreas');
-        const wrap = document.createElement('div'); wrap.className='section';
-        const title = document.createElement('div'); title.className='muted'; title.textContent = '追加本文2';
-        const ta = document.createElement('textarea'); ta.id='bodyInput2'; ta.placeholder='本文2を入力'; ta.value=bodyText2.text();
-        ta.addEventListener('input', ()=>{ bodyText2.text(ta.value||''); textLayer.draw(); });
-        // 詳細（色/サイズ/フォント）
-        const details = document.createElement('details'); details.style.marginTop = '6px';
-        const sum = document.createElement('summary'); sum.textContent = '詳細'; sum.style.cursor = 'pointer'; sum.style.color = 'var(--muted)'; details.appendChild(sum);
-        const row = document.createElement('div'); row.className='row'; row.style.gap='8px'; row.style.marginTop='6px';
-        const labColor = document.createElement('label'); labColor.textContent='色 ';
-        const inpColor = document.createElement('input'); inpColor.type='color';
-        // 初期値を既存ノードから取得（fillが#表記でない場合のfallback）
-        try { inpColor.value = bodyText2.fill() || '#e6edf3'; } catch(e){ inpColor.value = '#e6edf3'; }
-        inpColor.addEventListener('input', ()=>{ bodyText2.fill(inpColor.value||'#e6edf3'); textLayer.draw(); });
-        labColor.appendChild(inpColor);
-        const labSize = document.createElement('label'); labSize.textContent='サイズ(px) ';
-        const inpSize = document.createElement('input'); inpSize.type='number'; inpSize.style.width='72px'; inpSize.value = String(bodyText2.fontSize()||24);
-        inpSize.addEventListener('input', ()=>{ const v = clamp(parseInt(inpSize.value||'24',10), 8, 200); bodyText2.fontSize(v); textLayer.draw(); });
-        labSize.appendChild(inpSize);
-        const labFont = document.createElement('label'); labFont.textContent='フォント ';
-        const inpFont = document.createElement('input'); inpFont.type='text'; inpFont.style.width='220px'; inpFont.value = bodyText2.fontFamily() || 'Noto Sans JP, system-ui, sans-serif';
-        inpFont.addEventListener('change', ()=>{ bodyText2.fontFamily(inpFont.value||'Noto Sans JP, system-ui, sans-serif'); textLayer.draw(); });
-        labFont.appendChild(inpFont);
-        row.appendChild(labColor); row.appendChild(labSize); row.appendChild(labFont); details.appendChild(row);
-
-        const btnDel = document.createElement('button'); btnDel.textContent='本文2を削除'; btnDel.style.marginTop='6px';
-        btnDel.addEventListener('click', ()=>{ bodyText2.text(''); textLayer.draw(); wrap.remove(); body2AreaCreated=false; });
-        wrap.appendChild(title); wrap.appendChild(ta); wrap.appendChild(details); wrap.appendChild(btnDel); container.appendChild(wrap);
-        body2AreaCreated = true;
-      });
-
-      // Asset modal upload (bg/frame/icon)
-      let currentAssetUploadType = 'bg';
-      document.getElementById('openItemUpload')?.addEventListener('click', ()=>{}); // noop if exists from previous wiring
-      document.getElementById('assetUploadInput')?.addEventListener('change', async (e)=>{
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        try {
-          await idbAddUpload(f, currentAssetUploadType);
-          await loadUploads();
-          buildAssetGrid(currentAssetUploadType);
-        } catch(err) { console.error('Asset upload failed', err); }
-      });
-
-      // -------- Pixabay search & render --------
-      function initPixabayItemPreset(){
-        const el = (id)=> document.getElementById(id);
-        if (!el('pxTypeItem')) return;
-        el('pxTypeItem').value='illustration'; el('pxOriItem').value='all'; el('pxTransItem').checked=true; el('pxMinWItem').value='600'; el('pxMinHItem').value='600'; el('pxSafeItem').checked=true;
-      }
-      function initPixabayAssetPreset(){
-        const el = (id)=> document.getElementById(id);
-        if (!el('pxTypeAsset')) return;
-        if (currentAssetUploadType==='bg') {
-          el('pxTypeAsset').value='all';
-          el('pxOriAsset').value='vertical';
-          el('pxTransAsset').checked=false;
-          el('pxMinWAsset').value='600';
-          el('pxMinHAsset').value='900';
-          const q = document.getElementById('pxQAsset'); if (q) q.value = '背景';
-        }
-        else if (currentAssetUploadType==='icon') { el('pxTypeAsset').value='vector'; el('pxOriAsset').value='all'; el('pxTransAsset').checked=true; el('pxMinWAsset').value='256'; el('pxMinHAsset').value='256'; const q = document.getElementById('pxQAsset'); if (q && !q.value) q.value = ''; }
-        else { // frame
-          el('pxTypeAsset').value='illustration';
-          el('pxOriAsset').value='vertical';
-          el('pxTransAsset').checked=true;
-          el('pxMinWAsset').value='600';
-          el('pxMinHAsset').value='900';
-          const q = document.getElementById('pxQAsset'); if (q) q.value = 'フレーム';
-        }
-        el('pxSafeAsset').checked=true;
-      }
-      async function pixabaySearch(params){
-        const key = pxKey(); if (!key) { alert('Pixabay API Key を入力してください'); return { hits:[], totalHits:0 }; }
-        const qs = new URLSearchParams({ key,
-          q: params.q||'', image_type: params.image_type||'all', category: params.category||'', colors: params.colors||'',
-          orientation: params.orientation||'all', safesearch: params.safesearch?'true':'false', min_width: String(params.min_width||0), min_height: String(params.min_height||0),
-          page: String(params.page||1), per_page: String(params.per_page||80)
-        });
-        const url = `https://pixabay.com/api/?${qs}`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      }
-      function renderPxGrid(kind, hits, reset){
-        const grid = kind==='item'? document.getElementById('pxGridItem') : document.getElementById('pxGridAsset');
-        if (!grid) return; if (reset) grid.innerHTML='';
-        (hits||[]).forEach(hit=>{
-          const card = document.createElement('button'); card.type='button'; card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch'; card.style.background='transparent'; card.style.border='none'; card.style.padding='0'; card.style.cursor='pointer'; card.setAttribute('aria-label', `${hit.tags||''} by ${hit.user}`);
-          const d = document.createElement('div'); d.className='thumb item-thumb'; const img = document.createElement('img'); img.src = hit.previewURL; d.appendChild(img);
-          const cap = document.createElement('div'); cap.className='caption'; cap.innerHTML = `<a href="${hit.pageURL}" target="_blank" rel="noreferrer">${hit.user} / Pixabay</a>`; d.appendChild(cap);
-          card.appendChild(d);
-          card.addEventListener('click', async ()=>{
-            const cat = (kind==='item') ? 'item' : (currentAssetUploadType==='bg' ? 'bg' : currentAssetUploadType==='icon' ? 'icon' : 'frame');
-            await importPixabayHit(hit, cat);
-            document.getElementById(kind==='item'?'itemModal':'assetModal').style.display='none';
-          });
-          grid.appendChild(card);
-        });
-      }
-      function buildPxItemParams(reset){ if (reset) window._pxItemPage=1; const p = {
-          q: (document.getElementById('pxQItem')?.value||''), image_type: document.getElementById('pxTypeItem')?.value,
-          orientation: document.getElementById('pxOriItem')?.value, colors: document.getElementById('pxTransItem')?.checked ? 'transparent' : '',
-          safesearch: document.getElementById('pxSafeItem')?.checked, min_width: parseInt(document.getElementById('pxMinWItem')?.value||'0',10)||0,
-          min_height: parseInt(document.getElementById('pxMinHItem')?.value||'0',10)||0, page: window._pxItemPage||1, per_page: 80
-        }; return p; }
-      async function doPxSearchItem(reset){ const p=buildPxItemParams(reset); const data=await pixabaySearch(p); renderPxGrid('item', data.hits, reset); }
-      document.getElementById('pxSearchItem')?.addEventListener('click', ()=> doPxSearchItem(true));
-      document.getElementById('pxMoreItem')?.addEventListener('click', async ()=>{ window._pxItemPage=(window._pxItemPage||1)+1; await doPxSearchItem(false); });
-
-      function buildPxAssetParams(reset){ if (reset) window._pxAssetPage=1; const p = {
-          q: (document.getElementById('pxQAsset')?.value||''), image_type: document.getElementById('pxTypeAsset')?.value,
-          category: (currentAssetUploadType==='bg'?'backgrounds':''), orientation: document.getElementById('pxOriAsset')?.value,
-          colors: document.getElementById('pxTransAsset')?.checked ? 'transparent' : '', safesearch: document.getElementById('pxSafeAsset')?.checked,
-          min_width: parseInt(document.getElementById('pxMinWAsset')?.value||'0',10)||0, min_height: parseInt(document.getElementById('pxMinHAsset')?.value||'0',10)||0,
-          page: window._pxAssetPage||1, per_page: 80
-        }; return p; }
-      async function doPxSearchAsset(reset){ const p=buildPxAssetParams(reset); const data=await pixabaySearch(p); renderPxGrid('asset', data.hits, reset); }
-      document.getElementById('pxSearchAsset')?.addEventListener('click', ()=> doPxSearchAsset(true));
-      document.getElementById('pxMoreAsset')?.addEventListener('click', async ()=>{ window._pxAssetPage=(window._pxAssetPage||1)+1; await doPxSearchAsset(false); });
-
-      async function importPixabayHit(hit, category){
-        try{
-          const src = hit.largeImageURL || hit.webformatURL || hit.previewURL;
-          const imgRes = await fetch(src, { cache:'no-store' });
-          const blob = await imgRes.blob();
-          const ext = (blob.type && blob.type.includes('png')) ? 'png' : (blob.type && blob.type.includes('webp')) ? 'webp' : 'jpg';
-          const file = new File([blob], `pixabay-${hit.id}.${ext}`, { type: blob.type||'image/jpeg' });
-          const meta = { source:'pixabay', sourceMeta: { provider:'pixabay', id: hit.id, pageURL: hit.pageURL, user: hit.user, user_id: hit.user_id, userImageURL: hit.userImageURL, imageWidth: hit.imageWidth, imageHeight: hit.imageHeight, tags: hit.tags||'' } };
-          const id = await idbAddUpload(file, category, meta);
-          await loadUploads();
-          let rec = null;
-          if (category==='bg') rec = (window.UPLOAD_BG||[]).find(r=>r.id===id);
-          else if (category==='icon') rec = (window.UPLOAD_ICON||[]).find(r=>r.id===id);
-          else if (category==='frame') rec = (window.UPLOAD_FRAME||[]).find(r=>r.id===id);
-          else rec = (window.UPLOAD_ITEMS||[]).find(r=>r.id===id);
-          const url = rec?.url; if (!url) return;
-          if (category==='bg') await applyBackgroundImageURL(url);
-          else if (category==='icon') await addBadgeIconURL(url);
-          else if (category==='frame') await applyFrameImageURL(url);
-          else await addItemImageURL(url);
-        } catch(e){ console.error(e); alert('Pixabay からの取り込みに失敗しました'); }
-      }
-
-      // Asset picker (bg/frame/icon)
-      function openAssetPicker(type){
-        const modal = document.getElementById('assetModal');
-        const title = document.getElementById('assetModalTitle');
-        if (type==='bg') title.textContent='背景を選択';
-        else if (type==='frame') title.textContent='枠を選択';
-        else title.textContent='アイコンを選択';
-        currentAssetUploadType = type;
-        document.getElementById('openAssetUpload')?.addEventListener('click', ()=>{
-          const up = document.getElementById('assetUploadInput'); up.value=''; up.click();
-        }, { once: true });
-        buildAssetGrid(type);
-        // init tabs (local as default) and presets for pixabay
-        setAssetTab('local');
-        // enable drag & drop upload into the grid for current type
-        try { setupDropUpload(document.getElementById('assetGrid'), ()=> currentAssetUploadType, async ()=>{ await loadUploads(); buildAssetGrid(currentAssetUploadType); }); } catch(e){}
-        modal.style.display='grid';
-      }
-      function buildAssetGrid(type){
-        const grid = document.getElementById('assetGrid');
-        if (!grid) return;
-        grid.innerHTML='';
-        grid.classList.add('dropzone');
-        let manifest = [], uploaded = [];
-        if (type==='bg') { manifest = (window.ASSET_BG_LIST||[]); uploaded = (window.UPLOAD_BG||[]); }
-        else if (type==='frame') { manifest = (window.ASSET_FRAME_LIST||[]); uploaded = (window.UPLOAD_FRAME||[]); }
-        else { manifest = (window.ASSET_ICON_LIST||[]); uploaded = (window.UPLOAD_ICON||[]); }
-        // Uploaded first with delete
-        (uploaded||[]).forEach(u => {
-          const card = document.createElement('div'); card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch';
-          const d = document.createElement('div'); d.className = 'thumb item-thumb';
-          const img = document.createElement('img'); img.src = u.url; d.appendChild(img);
-          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = `${u.name}（ブラウザ内）`; d.appendChild(cap);
-          d.addEventListener('click', async ()=>{
-            const url = u.url;
-            if (type==='bg') await applyBackgroundImageURL(url);
-            else if (type==='frame') await applyFrameImageURL(url);
-            else await addBadgeIconURL(url);
-            document.getElementById('assetModal').style.display='none';
-          });
-          const del = document.createElement('button'); del.textContent='削除'; del.style.marginTop='6px'; del.style.fontSize='12px'; del.addEventListener('click', async (ev)=>{
-            ev.stopPropagation(); await idbDeleteUpload(u.id); await loadUploads(); buildAssetGrid(type);
-          });
-          card.appendChild(d); card.appendChild(del); grid.appendChild(card);
-        });
-        // Manifest entries (no delete)
-        (manifest||[]).forEach(url => {
-          const d = document.createElement('div'); d.className = 'thumb item-thumb';
-          const img = document.createElement('img'); img.src = url; d.appendChild(img);
-          const cap = document.createElement('div'); cap.className = 'caption'; cap.textContent = url.split('/').pop(); d.appendChild(cap);
-          d.addEventListener('click', async ()=>{
-            if (type==='bg') await applyBackgroundImageURL(url);
-            else if (type==='frame') await applyFrameImageURL(url);
-            else await addBadgeIconURL(url);
-            document.getElementById('assetModal').style.display='none';
-          });
-          grid.appendChild(d);
-        });
-      }
-
-      // Generic drag & drop uploader for grids (items/assets)
-      function setupDropUpload(target, categoryProvider, onDone){
-        if (!target) return;
-        if (target.dataset.dropBound === '1') return; // avoid double-binding
-        target.dataset.dropBound = '1';
-        const enter = (e)=>{ e.preventDefault(); e.stopPropagation(); target.classList.add('dz-active'); };
-        const over  = (e)=>{ e.preventDefault(); e.stopPropagation(); target.classList.add('dz-active'); };
-        const leave = (e)=>{ e.preventDefault(); e.stopPropagation(); target.classList.remove('dz-active'); };
-        const drop  = async (e)=>{
-          e.preventDefault(); e.stopPropagation(); target.classList.remove('dz-active');
-          const files = Array.from(e.dataTransfer?.files || []).filter(f=>/\.(png|jpe?g|webp)$/i.test(f.name));
-          if (!files.length) return;
-          const cat = typeof categoryProvider==='function' ? categoryProvider() : 'item';
-          for (const f of files){ try { await idbAddUpload(f, cat); } catch(err){ console.warn('drop add failed', err); } }
-          try { await onDone?.(); } catch(err) { console.warn('drop refresh failed', err); }
-        };
-        ['dragenter','dragover'].forEach(ev=> target.addEventListener(ev, enter));
-        ['dragleave','dragend'].forEach(ev=> target.addEventListener(ev, leave));
-        target.addEventListener('drop', drop);
-      }
-
-      // (ステータスは廃止)
-
-      // Guides toggle
-      const toggleGuides = document.getElementById('toggleGuides');
-      let showGuides = false;
-      function drawGuides() {
-        guideLayer.destroyChildren();
-        if (!showGuides) { guideLayer.draw(); return; }
-        const addRect = (x,y,w,h,dash) => guideLayer.add(new Konva.Rect({ x,y,width:w,height:h, stroke:'#5f9fff', strokeWidth:1, dash: dash||[4,3], listening:false }));
-        const addLine = (x1,y1,x2,y2,dash) => guideLayer.add(new Konva.Line({ points:[x1,y1,x2,y2], stroke:'#5f9fff', strokeWidth:1, dash: dash||[4,3], listening:false }));
-        addRect(INSET.x, INSET.y, INSET.w, INSET.h);
-        addRect(ZONES.main.x, ZONES.main.y, ZONES.main.w, ZONES.main.h);
-        addRect(ZONES.title.x, ZONES.title.y, ZONES.title.w, ZONES.title.h);
-        addRect(ZONES.desc.x, ZONES.desc.y, ZONES.desc.w, ZONES.desc.h);
-        addLine(ZONES.title.x, ZONES.title.y + ZONES.title.h, ZONES.title.x + ZONES.title.w, ZONES.title.y + ZONES.title.h);
-        addLine(ZONES.desc.x, ZONES.desc.y, ZONES.desc.x + ZONES.desc.w, ZONES.desc.y);
-        guideLayer.draw();
-      }
-      toggleGuides?.addEventListener('change', () => { showGuides = toggleGuides.checked; drawGuides(); });
-
-      // Preview scaling
-      const zoomWrap = document.getElementById('stageZoom');
-      const viewScaleSel = document.getElementById('viewScale');
-      function applyScale(scale) {
-        zoomWrap.style.transform = `scale(${scale})`;
-      }
-      function fitToViewport() {
-        const wrap = document.getElementById('stageWrap');
-        const w = wrap.clientWidth - 16; // padding allowance
-        const h = wrap.clientHeight - 16;
-        let s = Math.min(w / CANVAS_W, h / CANVAS_H, 1);
-        // Mobileでは若干小さめに（下切れ対策）
-        const mql = window.matchMedia('(max-width: 960px)');
-        if (mql.matches) s *= 0.9; // 約10%小さく
-        applyScale(s > 0 ? s : 1);
-      }
-      viewScaleSel.addEventListener('change', () => {
-        const v = viewScaleSel.value;
-        if (v === 'fit') { fitToViewport(); }
-        else { applyScale(parseFloat(v)); }
-      });
-      window.addEventListener('resize', () => {
-        if (viewScaleSel.value === 'fit') fitToViewport();
-      });
-
-      // Load manifest if present, then init
-      async function loadManifestAndInit() {
-        const isFile = (location.protocol === 'file:' || location.origin === 'null');
-        if (!isFile) {
-          try {
-            const res = await fetch('assets/manifest.json', { cache: 'no-cache' });
-            if (res.ok) {
-              const data = await res.json();
-              window.ASSET_BG_LIST = (data.backgrounds || []).map(s => s);
-              window.ASSET_FRAME_LIST = (data.frames || []).map(s => s);
-              window.ASSET_ICON_LIST = (data.icons || []).map(s => s);
-              window.ASSET_ITEM_LIST = (data.items || []).map(s => s);
-            }
-          } catch (e) {
-            // ignore, fallback to placeholders
-          }
-        }
-        await loadUploads();
-        buildThumbs();
-        // Preferred initial assets
-        const desired = {
-          bg: 'SSR.png',          // 背景
-          frame: 'frame3.png',    // 枠
-          item: 'soad.png',       // アイテム
-          icon: 'sun.png',        // アイコン
-        };
-        const pickByName = (list, name) => {
-          try { return (list||[]).find(u => u.split('/').pop() === name) || null; } catch(_) { return null; }
-        };
-        // Background
-        if (window.ASSET_BG_LIST && window.ASSET_BG_LIST.length) {
-          const urlBg = pickByName(window.ASSET_BG_LIST, desired.bg) || window.ASSET_BG_LIST[0];
-          await applyBackgroundImageURL(urlBg);
-        } else {
-          applyBackground(BACKGROUNDS[0]);
-        }
-        // Frame
-        if (window.ASSET_FRAME_LIST && window.ASSET_FRAME_LIST.length) {
-          const urlFr = pickByName(window.ASSET_FRAME_LIST, desired.frame) || window.ASSET_FRAME_LIST[0];
-          await applyFrameImageURL(urlFr);
-        } else {
-          applyFrame(FRAMES[0]);
-        }
-        // Item (optional)
-        if (window.ASSET_ITEM_LIST && window.ASSET_ITEM_LIST.length) {
-          const urlItem = pickByName(window.ASSET_ITEM_LIST, desired.item);
-          if (urlItem) { await addItemImageURL(urlItem); }
-        }
-        // Icon in first slot (optional)
-        if (window.ASSET_ICON_LIST && window.ASSET_ICON_LIST.length) {
-          const urlIcon = pickByName(window.ASSET_ICON_LIST, desired.icon);
-          if (urlIcon) { currentIconSlot = 0; await addBadgeIconURL(urlIcon); }
-        }
-        rebuildFontSelects();
-      }
-      titleInput.value = '勇者のつるぎ';
-      bodyInput.value = '魔王を倒した伝説のつるぎ。\n勇者の押し入れの奥底に眠る。';
-      titleText.text(titleInput.value);
-      bodyText.text(bodyInput.value);
-      // Apply initial styles from controls
-      applyTitleStyle();
-      applyBodyStyle();
-      autoLayout();
-      loadManifestAndInit();
-      // Initial preview scale: 50%
-      // Initial preview scale: mobile = fit, desktop = 50%
-      (function(){
-        const sel = document.getElementById('viewScale');
-        const mql = window.matchMedia('(max-width: 960px)');
-        function applyInitialScale(){
-          if (mql.matches){ sel.value = 'fit'; fitToViewport(); }
-          else { sel.value = '0.5'; applyScale(0.5); }
-        }
-        applyInitialScale();
-        try { mql.addEventListener('change', applyInitialScale); } catch(e) {
-          // Safari fallback
-          window.addEventListener('resize', applyInitialScale);
-        }
-      })();
-
-      // Mobile split view (draggable divider between stage and settings)
-      (function(){
-        const mql = window.matchMedia('(max-width: 960px)');
-        const stageWrap = document.getElementById('stageWrap');
-        const aside = document.querySelector('main > aside.panel');
-        const divider = document.getElementById('mobileDivider');
-        let ratio = 0.7; // initial stage area ratio on mobile (more space to image)
-        let dragging = false;
-        function availHeight(){
-          const header = document.querySelector('header');
-          const hH = header ? header.getBoundingClientRect().height : 0;
-          // main vertical paddings ~ 16px (safe margin 20)
-          return Math.max(200, window.innerHeight - hH - 20);
-        }
-        function applySplit(){
-          const ah = availHeight();
-          const stageH = Math.round(ah * ratio);
-          const asideH = Math.max(120, ah - stageH);
-          stageWrap.style.height = stageH + 'px';
-          aside.style.maxHeight = asideH + 'px';
-          if (document.getElementById('viewScale')?.value === 'fit') {
-            // re-fit after size change
-            try { fitToViewport(); } catch(e){}
-          }
-        }
-        function enable(){
-          divider.style.display = 'block';
-          applySplit();
-        }
-        function disable(){
-          divider.style.display = 'none';
-          stageWrap.style.height = '';
-          aside.style.maxHeight = '';
-        }
-        function onDown(e){ dragging = true; e.preventDefault(); }
-        function onMove(e){
-          if (!dragging) return;
-          const y = (e.touches? e.touches[0].clientY : e.clientY);
-          const header = document.querySelector('header');
-          const top = (header ? header.getBoundingClientRect().bottom : 0) + 10; // account padding
-          const ah = availHeight();
-          const rel = (y - top) / ah; // 0..1
-          ratio = Math.min(0.9, Math.max(0.2, rel));
-          applySplit();
-        }
-        function onUp(){ dragging = false; }
-        function attach(){
-          divider.addEventListener('pointerdown', onDown);
-          window.addEventListener('pointermove', onMove);
-          window.addEventListener('pointerup', onUp);
-          // touch fallback
-          divider.addEventListener('touchstart', onDown, {passive:false});
-          window.addEventListener('touchmove', onMove, {passive:false});
-          window.addEventListener('touchend', onUp);
-        }
-        function detach(){
-          divider.removeEventListener('pointerdown', onDown);
-          window.removeEventListener('pointermove', onMove);
-          window.removeEventListener('pointerup', onUp);
-          divider.removeEventListener('touchstart', onDown);
-          window.removeEventListener('touchmove', onMove);
-          window.removeEventListener('touchend', onUp);
-        }
-        function handle(){ if (mql.matches) { enable(); attach(); } else { disable(); detach(); } }
-        handle();
-        try { mql.addEventListener('change', handle); } catch(e) { window.addEventListener('resize', handle); }
-      })();
-    </script>
-  </body>
-  </html>
+</body>
+</html>

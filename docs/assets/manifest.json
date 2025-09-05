@@ -26,12 +26,20 @@
                   "assets/icons/moon.png",
                   "assets/icons/passive.png",
                   "assets/icons/sun.png",
-                  "assets/icons/うちわ.png",
+                  "assets/icons/お茶.png",
+                  "assets/icons/サイコロ.png",
                   "assets/icons/十手.png",
                   "assets/icons/土.png",
+                  "assets/icons/城.png",
+                  "assets/icons/宝石.png",
                   "assets/icons/小判.png",
+                  "assets/icons/巻物.png",
                   "assets/icons/扇子.png",
                   "assets/icons/水.png",
+                  "assets/icons/砂時計.png",
+                  "assets/icons/錠前.png",
+                  "assets/icons/鍵.png",
+                  "assets/icons/電.png",
                   "assets/icons/風.png"
               ],
     "items":  [
@@ -42,14 +50,20 @@
                   "assets/items/Wolf.png",
                   "assets/items/お願い.png",
                   "assets/items/ゲート.png",
+                  "assets/items/サラマンダー.png",
+                  "assets/items/サーペント.png",
                   "assets/items/ゾンビ.png",
+                  "assets/items/モフモフ.png",
                   "assets/items/ワイン.png",
                   "assets/items/容疑者.png",
                   "assets/items/探偵.png",
                   "assets/items/甲冑.png",
                   "assets/items/米屋.png",
                   "assets/items/聖水.png",
+                  "assets/items/解散権.png",
                   "assets/items/靴.png",
-                  "assets/items/靴２.png"
+                  "assets/items/靴２.png",
+                  "assets/items/魔法の鎧.png",
+                  "assets/items/魔法使い.png"
               ]
 }
