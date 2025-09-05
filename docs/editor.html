@@ -41,7 +41,7 @@
       <h1>トレーディングカードクラフター</h1>
       <span class="spacer"></span>
       <a href="index.html" style="color:#5f9fff; text-decoration:none; font-weight:600">ヘルプ</a>
-      <a href="gen.html" style="color:#5f9fff; text-decoration:none; font-weight:600; margin-left:10px;">AI画像生成へ</a>
+      
     </header>
     <main>
       <aside class="panel">
@@ -225,6 +225,7 @@
           </label>
           <button id="pxSearchItem" class="primary" type="button">検索</button>
         </div>
+        <div id="pxErrorItem" role="alert" aria-live="polite" style="display:none; margin-top:8px; padding:8px; border:1px solid #f5c2c7; background:#fff5f5; color:#842029; border-radius:6px; font-size:12px;"></div>
         <div id="pxGridItem" style="margin-top:8px; display:grid; grid-template-columns: repeat(auto-fill, 128px); gap:12px; align-content:start;"></div>
         <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;">
           <button id="pxMoreItem" type="button">もっと見る</button>
@@ -281,6 +282,7 @@
           </label>
           <button id="pxSearchAsset" class="primary" type="button">検索</button>
         </div>
+        <div id="pxErrorAsset" role="alert" aria-live="polite" style="display:none; margin-top:8px; padding:8px; border:1px solid #f5c2c7; background:#fff5f5; color:#842029; border-radius:6px; font-size:12px;"></div>
         <div id="pxGridAsset" style="margin-top:8px; display:grid; grid-template-columns: repeat(auto-fill, 160px); gap:12px; align-content:start;"></div>
         <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;">
           <button id="pxMoreAsset" type="button">もっと見る</button>
@@ -1174,17 +1176,46 @@
         el('pxSafeAsset').checked=true;
       }
       async function pixabaySearch(params){
-        const key = pxKey(); if (!key) { alert('Pixabay API Key を入力してください'); return { hits:[], totalHits:0 }; }
-        const qs = new URLSearchParams({ key,
-          q: params.q||'', image_type: params.image_type||'all', category: params.category||'', colors: params.colors||'',
-          orientation: params.orientation||'all', safesearch: params.safesearch?'true':'false', min_width: String(params.min_width||0), min_height: String(params.min_height||0),
-          page: String(params.page||1), per_page: String(params.per_page||80)
-        });
+        const key = pxKey();
+        if (!key) {
+          const err = new Error('Pixabay API Key が未入力です');
+          err.name = 'PxNoKey';
+          throw err;
+        }
+        const qs = new URLSearchParams();
+        qs.set('key', key);
+        if (params.q) qs.set('q', params.q);
+        if (params.image_type) qs.set('image_type', params.image_type);
+        if (params.category) qs.set('category', params.category);
+        if (params.colors) qs.set('colors', params.colors);
+        if (params.orientation) qs.set('orientation', params.orientation);
+        if (typeof params.safesearch === 'boolean') qs.set('safesearch', params.safesearch ? 'true' : 'false');
+        if (params.min_width && Number(params.min_width) > 0) qs.set('min_width', String(params.min_width));
+        if (params.min_height && Number(params.min_height) > 0) qs.set('min_height', String(params.min_height));
+        qs.set('page', String(params.page||1));
+        qs.set('per_page', String(params.per_page||80));
         const url = `https://pixabay.com/api/?${qs}`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        let res;
+        try {
+          res = await fetch(url, { cache: 'no-store' });
+        } catch (e) {
+          const err = new Error('ネットワークエラー');
+          err.name = 'PxNetworkError';
+          throw err;
+        }
+        if (!res.ok) {
+          const err = new Error(`HTTP ${res.status}`);
+          if ([400,401,403].includes(res.status)) err.name = 'PxAuthError';
+          else err.name = 'PxHttpError';
+          throw err;
+        }
         return res.json();
       }
+      function showPxError(kind, msg){
+        const el = document.getElementById(kind==='item' ? 'pxErrorItem' : 'pxErrorAsset');
+        if (!el) return; el.textContent = msg; el.style.display = 'block';
+      }
+      function clearPxError(kind){ const el = document.getElementById(kind==='item' ? 'pxErrorItem' : 'pxErrorAsset'); if (el) el.style.display = 'none'; }
       function renderPxGrid(kind, hits, reset){
         const grid = kind==='item'? document.getElementById('pxGridItem') : document.getElementById('pxGridAsset');
         if (!grid) return; if (reset) grid.innerHTML='';
@@ -1207,7 +1238,20 @@
           safesearch: document.getElementById('pxSafeItem')?.checked, min_width: parseInt(document.getElementById('pxMinWItem')?.value||'0',10)||0,
           min_height: parseInt(document.getElementById('pxMinHItem')?.value||'0',10)||0, page: window._pxItemPage||1, per_page: 80
         }; return p; }
-      async function doPxSearchItem(reset){ const p=buildPxItemParams(reset); const data=await pixabaySearch(p); renderPxGrid('item', data.hits, reset); }
+      async function doPxSearchItem(reset){
+        clearPxError('item');
+        try {
+          const p=buildPxItemParams(reset);
+          const data=await pixabaySearch(p);
+          renderPxGrid('item', data.hits, reset);
+        } catch(e){
+          console.error(e);
+          let msg = '通信エラーが発生しました。時間をおいて再試行してください。';
+          if (e?.name === 'PxNoKey') msg = 'Pixabay API Key を入力してください。';
+          else if (e?.name === 'PxAuthError') msg = '認証エラーです。APIキーを確認してください。';
+          showPxError('item', msg);
+        }
+      }
       document.getElementById('pxSearchItem')?.addEventListener('click', ()=> doPxSearchItem(true));
       document.getElementById('pxMoreItem')?.addEventListener('click', async ()=>{ window._pxItemPage=(window._pxItemPage||1)+1; await doPxSearchItem(false); });
 
@@ -1218,7 +1262,20 @@
           min_width: parseInt(document.getElementById('pxMinWAsset')?.value||'0',10)||0, min_height: parseInt(document.getElementById('pxMinHAsset')?.value||'0',10)||0,
           page: window._pxAssetPage||1, per_page: 80
         }; return p; }
-      async function doPxSearchAsset(reset){ const p=buildPxAssetParams(reset); const data=await pixabaySearch(p); renderPxGrid('asset', data.hits, reset); }
+      async function doPxSearchAsset(reset){
+        clearPxError('asset');
+        try {
+          const p=buildPxAssetParams(reset);
+          const data=await pixabaySearch(p);
+          renderPxGrid('asset', data.hits, reset);
+        } catch(e){
+          console.error(e);
+          let msg = '通信エラーが発生しました。時間をおいて再試行してください。';
+          if (e?.name === 'PxNoKey') msg = 'Pixabay API Key を入力してください。';
+          else if (e?.name === 'PxAuthError') msg = '認証エラーです。APIキーを確認してください。';
+          showPxError('asset', msg);
+        }
+      }
       document.getElementById('pxSearchAsset')?.addEventListener('click', ()=> doPxSearchAsset(true));
       document.getElementById('pxMoreAsset')?.addEventListener('click', async ()=>{ window._pxAssetPage=(window._pxAssetPage||1)+1; await doPxSearchAsset(false); });
 
