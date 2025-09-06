@@ -84,6 +84,26 @@ python3 -m http.server 8080 --bind 127.0.0.1
   - PowerShell: `./gen_manifest.ps1`
   - Bash: `./scripts_gen_manifest.sh`
 
+### サムネイル生成（コマンド例）
+選択画面の描画を軽くするため、`docs/assets/_thumbs/` に最長辺 256px の WebP サムネイルを作ります。
+
+- 事前準備（ImageMagick 必要）
+  - Debian/Ubuntu: `sudo apt-get update && sudo apt-get install -y imagemagick`
+  - macOS: `brew install imagemagick`
+  - Windows: 既に PowerShell 版は `magick` を前提にしています（Chocolatey: `choco install imagemagick` など）
+  - 確認: `magick -version` または `convert -version`
+
+- 生成→マニフェスト再生成（Bash 一発）
+  - `bash ./scripts_gen_thumbs.sh docs && bash ./scripts_gen_manifest.sh docs`
+
+- 生成→マニフェスト再生成（PowerShell）
+  - `./gen_thumbs.ps1 -AssetsRoot docs/assets -MaxSize 256`
+  - `./gen_manifest.ps1 -AssetsRoot docs/assets -OutFile docs/assets/manifest.json`
+
+メモ
+- サムネは `assets/_thumbs/<相対パス>.webp` に出力され、`docs/assets/manifest.json` には `{ "src": "assets/...", "thumb": "assets/_thumbs/..." }` 形式で紐付きます。
+- `file://` で開く場合は `fetch` 制約により `manifest.json` を読み込みません。`docs/` を HTTP 配信して確認してください（例: `python3 -m http.server -d docs 8080`）。
+
 枠ファイル名ルール（任意・推奨）
 ```
 frame-[Main]-[Title]-[Description].png

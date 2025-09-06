@@ -921,6 +921,27 @@
         if (which==='pixabay'){ a.style.display='none'; b.style.display='block'; ba.classList.remove('primary'); bb.classList.add('primary'); initPixabayItemPreset(); }
         else { a.style.display='block'; b.style.display='none'; ba.classList.add('primary'); bb.classList.remove('primary'); }
       }
+      // Helpers: ext and base key (case-insensitive)
+      function _extOf(src){ const m = String(src||'').match(/\.([a-z0-9]+)$/i); return m? m[1].toLowerCase() : ''; }
+      function _keyNoExt(src){ return String(src||'').replace(/\.(png|jpg|jpeg|webp)$/i,'').toLowerCase(); }
+      function _extRank(ext){ switch(ext){ case 'png': return 0; case 'jpg': case 'jpeg': return 1; case 'webp': return 2; default: return 3; } }
+      // Ensure no duplicate entries by basename (without extension); prefer PNG > JPG/JPEG > WEBP
+      function dedupEntries(list){
+        try{
+          const arr = (list||[]).slice();
+          // sort by extension rank so preferred types come first
+          arr.sort((a,b)=> _extRank(_extOf(a?.src||a)) - _extRank(_extOf(b?.src||b)));
+          const seen = new Set(); const out = [];
+          for (const e of arr){
+            const src = (e && typeof e === 'object') ? (e.src||'') : String(e||'');
+            if (!src) continue;
+            const key = _keyNoExt(src);
+            if (seen.has(key)) continue;
+            seen.add(key); out.push(e);
+          }
+          return out;
+        } catch(_) { return list||[]; }
+      }
       function setAssetTab(which){
         const a = document.getElementById('assetLocalTab');
         const b = document.getElementById('assetPixabayTab');
@@ -936,6 +957,8 @@
 
       function openItemPicker(){
         const modal = document.getElementById('itemModal');
+        // Reset paging so list shows from the first page every time
+        try { const g = document.getElementById('itemGrid'); if (g) g.dataset.offset = '0'; } catch(e){}
         buildItemGrid();
         setItemTab('local');
         // enable drag & drop upload into the item grid
@@ -946,6 +969,8 @@
       function buildItemGrid(){
         const grid = document.getElementById('itemGrid');
         if (!grid) return;
+        if (grid.dataset.building === '1') return; // re-entry guard
+        grid.dataset.building = '1';
         grid.innerHTML='';
         grid.classList.add('dropzone');
         // Uploaded (session/IndexedDB)
@@ -966,13 +991,9 @@
           card.appendChild(d); card.appendChild(del);
           grid.appendChild(card);
         });
-        // Manifest items (paged render)
-        grid.dataset.offset = grid.dataset.offset || '0';
-        const list = (window.ASSET_ITEM_LIST || []);
-        const pageSize = 36;
-        const start = parseInt(grid.dataset.offset,10) || 0;
-        const end = Math.min(start + pageSize, list.length);
-        for (let i=start; i<end; i++){
+        // Manifest items (full render; no paging to avoid duplication issues)
+        const list = dedupEntries(window.ASSET_ITEM_LIST || []);
+        for (let i=0; i<list.length; i++){
           const ent = list[i]; const src = ent && ent.src ? ent.src : ent; const thumb = ent && ent.thumb ? ent.thumb : src;
           const d = document.createElement('div'); d.className = 'thumb item-thumb';
           const img = document.createElement('img'); img.src = thumb; img.loading='lazy'; img.decoding='async'; img.width=128; img.height=228; d.appendChild(img);
@@ -981,14 +1002,10 @@
           d.addEventListener('click', async ()=>{ await addItemImageURL(src); closeItemPicker(); });
           grid.appendChild(d);
         }
-        grid.dataset.offset = String(end);
-        if (end < list.length){
-          const moreWrap = document.createElement('div'); moreWrap.style.display='flex'; moreWrap.style.justifyContent='center'; moreWrap.style.margin='8px 0';
-          const more = document.createElement('button'); more.textContent = 'もっと見る'; more.addEventListener('click', ()=>{ moreWrap.remove(); buildItemGrid(); });
-          moreWrap.appendChild(more); grid.appendChild(moreWrap);
-        }
+        // No pager in full render mode
         const total = (window.UPLOAD_ITEMS?.length || 0) + (window.ASSET_ITEM_LIST?.length || 0);
         const itCount = document.getElementById('itemCount'); if (itCount) itCount.textContent = `(${total})`;
+        grid.dataset.building = '0';
       }
       async function openItemUpload(){
         const up = document.getElementById('itemUploadInput');
@@ -1325,6 +1342,8 @@
         document.getElementById('openAssetUpload')?.addEventListener('click', ()=>{
           const up = document.getElementById('assetUploadInput'); up.value=''; up.click();
         }, { once: true });
+        // Reset paging so list shows from the first page every time
+        try { const g = document.getElementById('assetGrid'); if (g) g.dataset.offset = '0'; } catch(e){}
         buildAssetGrid(type);
         // init tabs (local as default) and presets for pixabay
         setAssetTab('local');
@@ -1335,12 +1354,15 @@
       function buildAssetGrid(type){
         const grid = document.getElementById('assetGrid');
         if (!grid) return;
+        if (grid.dataset.building === '1') return; // re-entry guard
+        grid.dataset.building = '1';
         grid.innerHTML='';
         grid.classList.add('dropzone');
         let manifest = [], uploaded = [];
         if (type==='bg') { manifest = (window.ASSET_BG_LIST||[]); uploaded = (window.UPLOAD_BG||[]); }
         else if (type==='frame') { manifest = (window.ASSET_FRAME_LIST||[]); uploaded = (window.UPLOAD_FRAME||[]); }
         else { manifest = (window.ASSET_ICON_LIST||[]); uploaded = (window.UPLOAD_ICON||[]); }
+        manifest = dedupEntries(manifest);
         // Uploaded first with delete
         (uploaded||[]).forEach(u => {
           const card = document.createElement('div'); card.style.display='flex'; card.style.flexDirection='column'; card.style.alignItems='stretch';
@@ -1359,12 +1381,8 @@
           });
           card.appendChild(d); card.appendChild(del); grid.appendChild(card);
         });
-        // Manifest entries (no delete) - paged
-        grid.dataset.offset = grid.dataset.offset || '0';
-        const pageSize = 36;
-        const start = parseInt(grid.dataset.offset,10) || 0;
-        const end = Math.min(start + pageSize, (manifest||[]).length);
-        for (let i=start; i<end; i++){
+        // Manifest entries (full render; no paging to avoid duplication issues)
+        for (let i=0; i<(manifest||[]).length; i++){
           const ent = manifest[i]; const src = ent && ent.src ? ent.src : ent; const thumb = ent && ent.thumb ? ent.thumb : src;
           const d = document.createElement('div'); d.className = 'thumb item-thumb';
           const img = document.createElement('img'); img.src = thumb; img.loading='lazy'; img.decoding='async'; img.width=128; img.height=228; d.appendChild(img);
@@ -1377,12 +1395,8 @@
           });
           grid.appendChild(d);
         }
-        grid.dataset.offset = String(end);
-        if (end < (manifest||[]).length){
-          const moreWrap = document.createElement('div'); moreWrap.style.display='flex'; moreWrap.style.justifyContent='center'; moreWrap.style.margin='8px 0';
-          const more = document.createElement('button'); more.textContent = 'もっと見る'; more.addEventListener('click', ()=>{ moreWrap.remove(); buildAssetGrid(type); });
-          moreWrap.appendChild(more); grid.appendChild(moreWrap);
-        }
+        // No pager in full render mode
+        grid.dataset.building = '0';
       }
 
       // Generic drag & drop uploader for grids (items/assets)
@@ -1463,10 +1477,11 @@
                 if (e && typeof e === 'object') return { src: e.src, thumb: e.thumb || e.src };
                 return { src: e, thumb: e };
               });
-              window.ASSET_BG_LIST = norm(data.backgrounds);
-              window.ASSET_FRAME_LIST = norm(data.frames);
-              window.ASSET_ICON_LIST = norm(data.icons);
-              window.ASSET_ITEM_LIST = norm(data.items);
+              const uniqByBase = (arr)=> dedupEntries(arr);
+              window.ASSET_BG_LIST = uniqByBase(norm(data.backgrounds));
+              window.ASSET_FRAME_LIST = uniqByBase(norm(data.frames));
+              window.ASSET_ICON_LIST = uniqByBase(norm(data.icons));
+              window.ASSET_ITEM_LIST = uniqByBase(norm(data.items));
             }
           } catch (e) {
             // ignore, fallback to placeholders
