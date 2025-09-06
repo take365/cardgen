@@ -26,55 +26,54 @@ while IFS= read -r -d '' f; do
     assets/icon/*) icons+=("$p") ;;
     assets/items/*) items+=("$p") ;;
   esac
-done < <(find "$assets_dir" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0)
+done < <(find "$assets_dir" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -not -path "*/_thumbs/*" -print0)
 # emit JSON
+emit_array() {
+  local -n arr=$1
+  local out=""
+  for i in "${!arr[@]}"; do
+    local p="${arr[$i]}"
+    local thumb=""
+    # try to find a thumb under assets/_thumbs/ same relative path; prefer .webp then same ext
+    local rel_no_assets="${p#assets/}"
+    local base_ext="${p##*.}"
+    local thumb_webp="assets/_thumbs/${rel_no_assets%.*}.webp"
+    local thumb_same="assets/_thumbs/${rel_no_assets}"
+    if [ -f "$root_dir/$thumb_webp" ]; then thumb="$thumb_webp"; elif [ -f "$root_dir/$thumb_same" ]; then thumb="$thumb_same"; fi
+    local sep=",
+"
+    [ "$i" -eq 0 ] && sep=""
+    if [ -n "$thumb" ]; then
+      local qsrc=$(printf '%s' "$p" | sed 's/\\/\\\\/g; s/"/\\"/g')
+      local qth=$(printf '%s' "$thumb" | sed 's/\\/\\\\/g; s/"/\\"/g')
+      out+="$sep    { \"src\": \"$qsrc\", \"thumb\": \"$qth\" }"
+    else
+      local q=$(printf '%s' "$p" | sed 's/\\/\\\\/g; s/"/\\"/g')
+      out+="$sep    \"$q\""
+    fi
+  done
+  printf '%s' "$out"
+}
+
 json='{
   "backgrounds": [
 '
-for i in "${!backgrounds[@]}"; do
-  q=$(printf '%s' "${backgrounds[$i]}" | sed 's/\\/\\\\/g; s/"/\\"/g')
-  sep=",
-"
-  [ "$i" -eq 0 ] && sep=""
-  json+="$sep    \"$q\""
-
-done
+json+="$(emit_array backgrounds)"
 json+="
   ],
   \"frames\": [
 "
-for i in "${!frames[@]}"; do
-  q=$(printf '%s' "${frames[$i]}" | sed 's/\\/\\\\/g; s/"/\\"/g')
-  sep=",
-"
-  [ "$i" -eq 0 ] && sep=""
-  json+="$sep    \"$q\""
-
-done
+json+="$(emit_array frames)"
 json+="
   ],
   \"icons\": [
 "
-for i in "${!icons[@]}"; do
-  q=$(printf '%s' "${icons[$i]}" | sed 's/\\/\\\\/g; s/"/\\"/g')
-  sep=",
-"
-  [ "$i" -eq 0 ] && sep=""
-  json+="$sep    \"$q\""
-
-done
+json+="$(emit_array icons)"
 json+="
   ],
   \"items\": [
 "
-for i in "${!items[@]}"; do
-  q=$(printf '%s' "${items[$i]}" | sed 's/\\/\\\\/g; s/"/\\"/g')
-  sep=",
-"
-  [ "$i" -eq 0 ] && sep=""
-  json+="$sep    \"$q\""
-
-done
+json+="$(emit_array items)"
 json+="
   ]
 }

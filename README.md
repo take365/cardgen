@@ -9,7 +9,8 @@
 - 自動レイアウト（枠ファイル名 `frame-[Main]-[Title]-[Description].png` に基づくゾーン調整）
 - PNG エクスポート（透過、`pixelRatio=2`）
 - アセットマニフェスト自動生成（PowerShell/Bash）
-- AI 画像生成ページ（`public/gen.html`）で gpt-image-1 / dall-e-3 を利用可能
+- サムネイル自動生成（任意、PowerShell/Bash、最長辺256px → `assets/_thumbs/`）
+- AI 画像生成ページ（`docs/gen.html` または サイト直下の `gen.html`）で gpt-image-1 / dall-e-3 を利用可能
 
 ## ディレクトリ構成（抜粋）
 ```
@@ -29,7 +30,9 @@ cardgen/
 │  ├─ カードレイアウト寸法ガイド.md
 │  └─ フォント選択.md
 ├─ gen_manifest.ps1   # マニフェスト生成（PowerShell）
+├─ gen_thumbs.ps1     # サムネイル生成（PowerShell, ImageMagick 必要）
 ├─ scripts_gen_manifest.sh # マニフェスト生成（Bash）
+├─ scripts_gen_thumbs.sh   # サムネイル生成（Bash, ImageMagick 必要）
 ├─ start.ps1 / start.bat   # ローカル起動補助（Windows）※ docs を優先
 ├─ Dockerfile / nginx.conf # コンテナ配信（nginx:alpine）
 ```
@@ -71,8 +74,11 @@ python3 -m http.server 8080 --bind 127.0.0.1
 - タイトル: 「勇者のつるぎ」
 - 本文: 「魔王を倒した伝説のつるぎ。\n勇者の押し入れの奥底に眠る。」
 
-## アセットの追加とマニフェスト
-- 画像を `public/assets/` 配下の各ディレクトリに配置（`backgrounds/`, `frames/`, `icons/`, `items/`）
+## アセットの追加とマニフェスト/サムネイル
+- 画像を `docs/assets/` 配下の各ディレクトリに配置（`backgrounds/`, `frames/`, `icons/`, `items/`）
+- （任意）サムネイルを生成（高速化推奨。生成後にマニフェスト再生成）
+  - PowerShell: `./gen_thumbs.ps1 -AssetsRoot docs/assets -MaxSize 256`
+  - Bash: `bash ./scripts_gen_thumbs.sh docs`
 - マニフェストを更新（どちらか）
   - Windows: `./start.ps1` 実行時に自動生成
   - PowerShell: `./gen_manifest.ps1`
@@ -85,6 +91,10 @@ frame-[Main]-[Title]-[Description].png
 ```
 この数値から、メイン/タイトル/説明の各ゾーン高さを自動推定し、初期レイアウトに反映します。
 
+メモ（マニフェスト形式）
+- サムネイルが存在する場合は `{"src":"assets/...","thumb":"assets/_thumbs/..."}` 形式で出力されます。
+- サムネイルがない場合は従来どおり文字列（`"assets/..."`）。アプリ側はどちらも解釈可能です。
+
 ## AI 画像生成（オプション）
 - `http://localhost:8080/gen.html`
 - OpenAI API キーを入力（保存しません）
@@ -93,7 +103,7 @@ frame-[Main]-[Title]-[Description].png
 - 注意: ブラウザから直接 API を叩くため、公開環境ではサーバレス関数等の経由を推奨
 
 ## トラブルシュート
-- 素材が表示されない: `public/assets/manifest.json` が最新か確認。必要ならマニフェストを再生成
+- 素材が表示されない: `docs/assets/manifest.json` が最新か確認。必要ならマニフェストを再生成
 - フォントが反映されない: Google Fonts の URL が正しいか、CSS が読み込める環境か確認
 - `file://` で開くと動かない: `fetch` 制約のため、必ずローカルサーバ（上記の http.server / Docker）で起動
 

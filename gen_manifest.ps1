@@ -29,11 +29,24 @@ $icons += Collect({ param($f) $f.FullName -match '[/\\]icon[/\\]' })
 $items = @()
 $items += Collect({ param($f) $f.FullName -match '[/\\]items[/\\]' })
 
+function WithThumb($relPath) {
+  # Try assets/_thumbs/<relPath> (prefer .webp), else return the string
+  $p = $relPath
+  $thumbWebp = ($p -replace '^assets/', 'assets/_thumbs/') -replace '\.(png|jpg|jpeg|webp)$', '.webp'
+  $thumbSame = ($p -replace '^assets/', 'assets/_thumbs/')
+  $dir = Split-Path -Parent $AssetsRoot
+  $thumbWebpFs = Join-Path $dir $thumbWebp
+  $thumbSameFs = Join-Path $dir $thumbSame
+  if (Test-Path $thumbWebpFs) { return @{ src = $p; thumb = $thumbWebp } }
+  elseif (Test-Path $thumbSameFs) { return @{ src = $p; thumb = $thumbSame } }
+  else { return $p }
+}
+
 $obj = [ordered]@{
-  backgrounds = $backgrounds
-  frames = $frames
-  icons = $icons
-  items = $items
+  backgrounds = @($backgrounds | ForEach-Object { WithThumb $_ })
+  frames      = @($frames      | ForEach-Object { WithThumb $_ })
+  icons       = @($icons       | ForEach-Object { WithThumb $_ })
+  items       = @($items       | ForEach-Object { WithThumb $_ })
 }
 
 $json = $obj | ConvertTo-Json -Depth 3
